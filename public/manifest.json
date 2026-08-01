@@ -1,0 +1,30 @@
+{
+  "short_name": "Presensi MI",
+  "name": "Presensi MI Ma'arif Al Ihsan Soborejo",
+  "description": "Sistem Absensi Kehadiran & Jurnal Digital Guru MI Ma'arif Al Ihsan Soborejo",
+  "icons": [
+    {
+      "src": "/icon-192.jpg",
+      "type": "image/jpeg",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.jpg",
+      "type": "image/jpeg",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/app-icon.jpg",
+      "type": "image/jpeg",
+      "sizes": "1024x1024",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#064e3b",
+  "theme_color": "#064e3b",
+  "display": "standalone",
+  "orientation": "portrait"
+}

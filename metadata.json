@@ -1,0 +1,10 @@
+{
+  "name": "Remix Sistem Absensi Guru MI Ma\u0027arif Al Ihsan Soborejo",
+  "description": "Sistem Absensi Kehadiran \u0026 Jurnal Digital Guru MI Ma\u0027arif Al Ihsan Soborejo",
+  "requestFramePermissions": [
+    "geolocation"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

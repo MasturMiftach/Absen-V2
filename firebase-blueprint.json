@@ -1,0 +1,45 @@
+{
+  "entities": {
+    "AttendanceLog": {
+      "collectionName": "attendance_logs",
+      "description": "Log presensi guru dan staff",
+      "fields": {
+        "id": { "type": "string", "description": "Unique log ID" },
+        "teacherId": { "type": "string", "description": "ID Guru" },
+        "teacherName": { "type": "string", "description": "Nama Lengkap Guru" },
+        "nip": { "type": "string", "description": "NIP/NMY Guru" },
+        "role": { "type": "string", "description": "Jabatan/Role Guru" },
+        "presensiType": { "type": "string", "description": "MASUK, PULANG, IZIN, atau SAKIT" },
+        "status": { "type": "string", "description": "Datang Tepat Waktu, Terlambat, Pulang Tepat Waktu, Pulang Sebelum Waktu, IZIN, SAKIT" },
+        "time": { "type": "string", "description": "Waktu presensi (HH:MM:SS WIB)" },
+        "date": { "type": "string", "description": "Tanggal presensi (YYYY-MM-DD)" },
+        "notes": { "type": "string", "description": "Catatan / Jurnal / Alasan" }
+      }
+    },
+    "Teacher": {
+      "collectionName": "teachers",
+      "description": "Data master guru dan staff madrasah",
+      "fields": {
+        "id": { "type": "string", "description": "Unique teacher ID" },
+        "nip": { "type": "string", "description": "NIP/NMY Guru" },
+        "name": { "type": "string", "description": "Nama Guru" },
+        "role": { "type": "string", "description": "Jabatan Guru" },
+        "pin": { "type": "string", "description": "PIN Akses 6 Digit" }
+      }
+    },
+    "WorkScheduleDay": {
+      "collectionName": "schedule",
+      "description": "Jadwal jam kerja dan toleransi per hari",
+      "fields": {
+        "hari": { "type": "string", "description": "Nama Hari (Senin - Minggu)" },
+        "jamMasuk": { "type": "string", "description": "Jam masuk (HH:MM)" },
+        "jamPulang": { "type": "string", "description": "Jam pulang (HH:MM)" },
+        "toleransiTerlambatMnt": { "type": "number", "description": "Toleransi keterlambatan (menit)" },
+        "bukaAbsenMasukMnt": { "type": "number", "description": "Menit sebelum jam masuk untuk membuka absen" },
+        "toleransiPulangMnt": { "type": "number", "description": "Toleransi pulang lebih awal (menit)" },
+        "batasAbsenPulangMnt": { "type": "number", "description": "Menit setelah jam pulang batas akhir absen" },
+        "statusHari": { "type": "string", "description": "Masuk atau Libur" }
+      }
+    }
+  }
+}
