@@ -38,7 +38,8 @@ export const LoginView: React.FC<LoginViewProps> = ({ teachers, onLoginSuccess, 
         nip: teacher.nip,
         role: teacher.role,
         isStaff: true,
-        isAdmin: false
+        isAdmin: false,
+        photoUrl: teacher.photoUrl
       };
       onLoginSuccess(user);
     } else {
@@ -140,6 +141,28 @@ export const LoginView: React.FC<LoginViewProps> = ({ teachers, onLoginSuccess, 
                   ))}
                 </select>
               </div>
+
+              {/* SELECTED TEACHER PROFILE PHOTO PREVIEW */}
+              {selectedTeacherId && (() => {
+                const t = teachers.find(item => item.id === Number(selectedTeacherId));
+                if (!t) return null;
+                return (
+                  <div className="flex items-center gap-3 bg-emerald-50 border border-emerald-200 p-3 rounded-2xl animate-scale-up">
+                    <div className="w-12 h-12 rounded-xl bg-emerald-800 text-amber-300 font-bold flex items-center justify-center text-lg shadow-sm shrink-0 overflow-hidden border-2 border-amber-400">
+                      {t.photoUrl ? (
+                        <img src={t.photoUrl} alt={`Foto ${t.name}`} className="w-full h-full object-cover" />
+                      ) : (
+                        <span>{t.name.charAt(0)}</span>
+                      )}
+                    </div>
+                    <div className="overflow-hidden">
+                      <div className="text-xs font-bold text-slate-800 truncate">{t.name}</div>
+                      <div className="text-[11px] text-emerald-700 font-semibold truncate">{t.role}</div>
+                      <div className="text-[10px] text-slate-500 font-mono">ID: {t.nip}</div>
+                    </div>
+                  </div>
+                );
+              })()}
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">

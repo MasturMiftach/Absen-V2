@@ -9,12 +9,12 @@ export const DEFAULT_LOCATION_CONFIG: LocationConfig = {
 };
 
 export const INITIAL_TEACHERS: Teacher[] = [
-  { id: 1, name: "Siti Rahmawati, S.Pd.I", nip: "198802142019032012", role: "Wali Kelas 1", pin: "123456" },
-  { id: 2, name: "Muhammad Anshori, S.Pd", nip: "198506112015041003", role: "Wali Kelas 2 & PJOK", pin: "123456" },
-  { id: 3, name: "Nur Hidayah, M.Pd", nip: "199009252020122018", role: "Wali Kelas 3", pin: "123456" },
-  { id: 4, name: "Ahmad Zaini, S.Ag", nip: "197903152008011015", role: "Wali Kelas 4 & Guru Akidah", pin: "123456" },
-  { id: 5, name: "Budi Santoso, S.Pd", nip: "198311022014021004", role: "Wali Kelas 5", pin: "123456" },
-  { id: 6, name: "Khotimah, S.Pd.I", nip: "199201102022032021", role: "Wali Kelas 6 & Guru B. Arab", pin: "123456" }
+  { id: 1, name: "Siti Rahmawati, S.Pd.I", nip: "198802142019032012", role: "Wali Kelas 1", pin: "123456", photoUrl: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80" },
+  { id: 2, name: "Muhammad Anshori, S.Pd", nip: "198506112015041003", role: "Wali Kelas 2 & PJOK", pin: "123456", photoUrl: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150&auto=format&fit=crop&q=80" },
+  { id: 3, name: "Nur Hidayah, M.Pd", nip: "199009252020122018", role: "Wali Kelas 3", pin: "123456", photoUrl: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150&auto=format&fit=crop&q=80" },
+  { id: 4, name: "Ahmad Zaini, S.Ag", nip: "197903152008011015", role: "Wali Kelas 4 & Guru Akidah", pin: "123456", photoUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80" },
+  { id: 5, name: "Budi Santoso, S.Pd", nip: "198311022014021004", role: "Wali Kelas 5", pin: "123456", photoUrl: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80" },
+  { id: 6, name: "Khotimah, S.Pd.I", nip: "199201102022032021", role: "Wali Kelas 6 & Guru B. Arab", pin: "123456", photoUrl: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80" }
 ];
 
 export const DEFAULT_SCHEDULE: WorkScheduleDay[] = [

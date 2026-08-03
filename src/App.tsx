@@ -472,7 +472,8 @@ export default function App() {
         ...currentUser,
         name: updatedTeacher.name,
         nip: updatedTeacher.nip,
-        role: updatedTeacher.role
+        role: updatedTeacher.role,
+        photoUrl: updatedTeacher.photoUrl
       };
       setCurrentUser(updatedUser);
       localStorage.setItem('mi_soborejo_logged_user', JSON.stringify(updatedUser));

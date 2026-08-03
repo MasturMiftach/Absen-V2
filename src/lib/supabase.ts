@@ -91,7 +91,8 @@ export async function syncTeacherToSupabase(teacher: Teacher): Promise<void> {
       name: teacher.name,
       nip: teacher.nip || '',
       role: teacher.role || 'Guru',
-      pin: teacher.pin || ''
+      pin: teacher.pin || '',
+      photoUrl: teacher.photoUrl || ''
     });
     if (error) {
       console.error('Supabase Error: Gagal menyimpan data guru ke tabel "teachers":', error);
@@ -119,7 +120,8 @@ export async function syncTeachersToSupabase(teachers: Teacher[]): Promise<void>
       name: t.name,
       nip: t.nip || '',
       role: t.role || 'Guru',
-      pin: t.pin || ''
+      pin: t.pin || '',
+      photoUrl: t.photoUrl || ''
     }));
     const { error } = await supabase.from('teachers').upsert(records);
     if (error) {
@@ -356,7 +358,8 @@ CREATE TABLE IF NOT EXISTS teachers (
   name TEXT NOT NULL,
   nip TEXT,
   role TEXT,
-  pin TEXT
+  pin TEXT,
+  "photoUrl" TEXT
 );
 
 CREATE TABLE IF NOT EXISTS work_schedule (

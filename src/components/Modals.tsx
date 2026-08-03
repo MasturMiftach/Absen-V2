@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Teacher } from '../types';
-import { X, FileSpreadsheet, UserPlus, Settings, Hand, Stethoscope, Database, Copy, Check, Key, Pencil } from 'lucide-react';
+import { X, FileSpreadsheet, UserPlus, Settings, Hand, Stethoscope, Database, Copy, Check, Key, Pencil, Camera, Upload, Trash2, User } from 'lucide-react';
 import { getSupabaseCredentials, saveSupabaseCredentials, isSupabaseConnected, SUPABASE_SQL_SETUP } from '../lib/supabase';
 
 interface IzinModalProps {
@@ -282,8 +282,27 @@ export const AddTeacherModal: React.FC<AddTeacherModalProps> = ({ isOpen, onClos
   const [nip, setNip] = useState<string>('');
   const [role, setRole] = useState<string>('');
   const [pin, setPin] = useState<string>('123456');
+  const [photoUrl, setPhotoUrl] = useState<string>('');
 
   if (!isOpen) return null;
+
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 3 * 1024 * 1024) {
+      alert('Ukuran foto terlalu besar. Maksimal 3MB.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      if (evt.target?.result) {
+        setPhotoUrl(evt.target.result as string);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -293,19 +312,21 @@ export const AddTeacherModal: React.FC<AddTeacherModalProps> = ({ isOpen, onClos
       name: name.trim(),
       nip: nip.trim(),
       role: role.trim(),
-      pin: pin.trim() || '123456'
+      pin: pin.trim() || '123456',
+      photoUrl: photoUrl.trim()
     });
 
     setName('');
     setNip('');
     setRole('');
     setPin('123456');
+    setPhotoUrl('');
     onClose();
   };
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-4 animate-scale-up">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-4 animate-scale-up max-h-[90vh] overflow-y-auto custom-scrollbar">
         <div className="flex justify-between items-center pb-3 border-b border-slate-100">
           <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2">
             <UserPlus className="w-4 h-4 text-emerald-600" /> Tambah Guru / Staf Baru
@@ -316,6 +337,38 @@ export const AddTeacherModal: React.FC<AddTeacherModalProps> = ({ isOpen, onClos
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-3">
+          {/* FOTO PROFIL SECTION */}
+          <div>
+            <label className="block text-xs font-bold text-slate-700 mb-1.5">Foto Profil Guru</label>
+            <div className="flex items-center gap-3 bg-slate-50 border border-slate-200 p-3 rounded-xl">
+              <div className="relative w-14 h-14 rounded-full bg-emerald-800 text-amber-300 font-bold flex items-center justify-center overflow-hidden shrink-0 border-2 border-amber-400 shadow-sm">
+                {photoUrl ? (
+                  <img src={photoUrl} alt="Preview Foto" className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-lg">{name.trim() ? name.trim().charAt(0) : <User className="w-6 h-6 text-emerald-200" />}</span>
+                )}
+              </div>
+              <div className="space-y-1 flex-1">
+                <div className="flex items-center gap-2">
+                  <label className="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs font-bold cursor-pointer transition inline-flex items-center gap-1.5 shadow-sm">
+                    <Camera className="w-3.5 h-3.5 text-amber-300" /> Upload Foto
+                    <input type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" />
+                  </label>
+                  {photoUrl && (
+                    <button
+                      type="button"
+                      onClick={() => setPhotoUrl('')}
+                      className="px-2 py-1.5 bg-rose-50 text-rose-600 hover:bg-rose-100 rounded-lg text-xs font-semibold transition flex items-center gap-1"
+                    >
+                      <Trash2 className="w-3 h-3" /> Hapus
+                    </button>
+                  )}
+                </div>
+                <p className="text-[10px] text-slate-500">Format JPG/PNG, maks. 3MB</p>
+              </div>
+            </div>
+          </div>
+
           <div>
             <label className="block text-xs font-bold text-slate-700 mb-1">
               Nama Lengkap & Gelar <span className="text-rose-500">*</span>
@@ -409,6 +462,7 @@ export const EditTeacherModal: React.FC<EditTeacherModalProps> = ({
   const [nip, setNip] = useState<string>('');
   const [role, setRole] = useState<string>('');
   const [pin, setPin] = useState<string>('');
+  const [photoUrl, setPhotoUrl] = useState<string>('');
 
   React.useEffect(() => {
     if (teacher) {
@@ -416,10 +470,29 @@ export const EditTeacherModal: React.FC<EditTeacherModalProps> = ({
       setNip(teacher.nip);
       setRole(teacher.role);
       setPin(teacher.pin || '123456');
+      setPhotoUrl(teacher.photoUrl || '');
     }
   }, [teacher, isOpen]);
 
   if (!isOpen || !teacher) return null;
+
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 3 * 1024 * 1024) {
+      alert('Ukuran foto terlalu besar. Maksimal 3MB.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      if (evt.target?.result) {
+        setPhotoUrl(evt.target.result as string);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -430,7 +503,8 @@ export const EditTeacherModal: React.FC<EditTeacherModalProps> = ({
       name: name.trim(),
       nip: nip.trim(),
       role: role.trim(),
-      pin: pin.trim() || '123456'
+      pin: pin.trim() || '123456',
+      photoUrl: photoUrl.trim()
     });
 
     onClose();
@@ -438,10 +512,10 @@ export const EditTeacherModal: React.FC<EditTeacherModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-4 animate-scale-up">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-4 animate-scale-up max-h-[90vh] overflow-y-auto custom-scrollbar">
         <div className="flex justify-between items-center pb-3 border-b border-slate-100">
           <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2">
-            <Pencil className="w-4 h-4 text-emerald-600" /> Edit Akun Guru / Staf
+            <Pencil className="w-4 h-4 text-emerald-600" /> Edit Akun Guru & Foto Profil
           </h3>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600 transition">
             <X className="w-5 h-5" />
@@ -449,6 +523,38 @@ export const EditTeacherModal: React.FC<EditTeacherModalProps> = ({
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-3">
+          {/* FOTO PROFIL SECTION */}
+          <div>
+            <label className="block text-xs font-bold text-slate-700 mb-1.5">Foto Profil Guru</label>
+            <div className="flex items-center gap-3 bg-slate-50 border border-slate-200 p-3 rounded-xl">
+              <div className="relative w-14 h-14 rounded-full bg-emerald-800 text-amber-300 font-bold flex items-center justify-center overflow-hidden shrink-0 border-2 border-amber-400 shadow-sm">
+                {photoUrl ? (
+                  <img src={photoUrl} alt="Preview Foto" className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-lg">{name.trim() ? name.trim().charAt(0) : <User className="w-6 h-6 text-emerald-200" />}</span>
+                )}
+              </div>
+              <div className="space-y-1 flex-1">
+                <div className="flex items-center gap-2">
+                  <label className="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs font-bold cursor-pointer transition inline-flex items-center gap-1.5 shadow-sm">
+                    <Camera className="w-3.5 h-3.5 text-amber-300" /> Ganti Foto
+                    <input type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" />
+                  </label>
+                  {photoUrl && (
+                    <button
+                      type="button"
+                      onClick={() => setPhotoUrl('')}
+                      className="px-2 py-1.5 bg-rose-50 text-rose-600 hover:bg-rose-100 rounded-lg text-xs font-semibold transition flex items-center gap-1"
+                    >
+                      <Trash2 className="w-3 h-3" /> Hapus
+                    </button>
+                  )}
+                </div>
+                <p className="text-[10px] text-slate-500">Format JPG/PNG, maks. 3MB</p>
+              </div>
+            </div>
+          </div>
+
           <div>
             <label className="block text-xs font-bold text-slate-700 mb-1">
               Nama Lengkap & Gelar <span className="text-rose-500">*</span>

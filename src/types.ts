@@ -4,6 +4,7 @@ export interface Teacher {
   nip: string;
   role: string;
   pin: string;
+  photoUrl?: string;
 }
 
 export interface WorkScheduleDay {
@@ -36,6 +37,7 @@ export interface ActiveUser {
   role: string;
   isStaff: boolean;
   isAdmin: boolean;
+  photoUrl?: string;
 }
 
 export interface LocationConfig {

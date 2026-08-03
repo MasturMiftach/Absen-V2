@@ -93,9 +93,18 @@ export const Navbar: React.FC<NavbarProps> = ({
 
             {/* User Active Session Badge & Actions */}
             <div className="flex items-center gap-2">
-              <div className="bg-emerald-950/80 px-3 py-1.5 rounded-xl border border-emerald-600/50 text-right">
-                <div className="text-xs font-bold text-white leading-tight">{currentUser.name}</div>
-                <div className="text-[10px] text-amber-400 font-semibold uppercase">{currentUser.role}</div>
+              <div className="bg-emerald-950/80 px-2.5 py-1.5 rounded-xl border border-emerald-600/50 flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-emerald-800 text-amber-300 font-bold flex items-center justify-center text-xs overflow-hidden shrink-0 border border-amber-400/60 shadow-sm">
+                  {currentUser.photoUrl ? (
+                    <img src={currentUser.photoUrl} alt={`Foto ${currentUser.name}`} className="w-full h-full object-cover" />
+                  ) : (
+                    <span>{currentUser.name ? currentUser.name.charAt(0) : 'U'}</span>
+                  )}
+                </div>
+                <div className="text-right hidden sm:block">
+                  <div className="text-xs font-bold text-white leading-tight truncate max-w-[140px]">{currentUser.name}</div>
+                  <div className="text-[10px] text-amber-400 font-semibold uppercase truncate max-w-[140px]">{currentUser.role}</div>
+                </div>
               </div>
 
               <button

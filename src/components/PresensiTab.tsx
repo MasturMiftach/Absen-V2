@@ -172,15 +172,17 @@ export const PresensiTab: React.FC<PresensiTabProps> = ({
       {/* Welcome Teacher Banner */}
       <div className="bg-gradient-to-r from-emerald-950 via-emerald-900 to-emerald-950 rounded-3xl p-6 text-white shadow-xl border border-amber-400/30 relative overflow-hidden flex flex-col sm:flex-row items-center justify-between gap-4">
         <div className="flex items-center space-x-4">
-          <div className="w-16 h-16 sm:w-20 sm:h-20 bg-white p-1.5 rounded-2xl border-2 border-amber-400 shadow-lg flex items-center justify-center overflow-hidden shrink-0">
-            <img
-              src="/logo.jpg"
-              onError={(e) => {
-                (e.target as HTMLImageElement).src = '/app-icon.jpg';
-              }}
-              alt="Logo MI Ma'arif Al Ihsan Soborejo"
-              className="w-full h-full object-contain"
-            />
+          {/* TEACHER PROFILE PHOTO / AVATAR */}
+          <div className="relative w-16 h-16 sm:w-20 sm:h-20 bg-emerald-800 text-amber-300 font-extrabold text-2xl rounded-2xl border-2 border-amber-400 shadow-lg flex items-center justify-center overflow-hidden shrink-0">
+            {currentUser.photoUrl ? (
+              <img
+                src={currentUser.photoUrl}
+                alt={`Foto Profil ${currentUser.name}`}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <span>{currentUser.name ? currentUser.name.charAt(0) : 'G'}</span>
+            )}
           </div>
           <div>
             <div className="text-xs text-emerald-200 font-medium">Assalamu'alaikum Wr. Wb.</div>

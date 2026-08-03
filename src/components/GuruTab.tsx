@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Teacher } from '../types';
-import { Users, Upload, UserPlus, Trash2, Pencil, Search, Key } from 'lucide-react';
+import { Users, Upload, UserPlus, Trash2, Pencil, Search, Key, Camera } from 'lucide-react';
 import { EditTeacherModal } from './Modals';
 
 interface GuruTabProps {
@@ -121,14 +121,29 @@ export const GuruTab: React.FC<GuruTabProps> = ({
             className="bg-slate-50 rounded-2xl border border-slate-200 p-4 flex items-start justify-between shadow-sm hover:shadow transition"
           >
             <div className="flex items-center space-x-3">
-              <div className="w-11 h-11 rounded-xl bg-emerald-800 text-amber-400 font-bold flex items-center justify-center text-base shadow-sm shrink-0">
-                {t.name.charAt(0)}
+              <div
+                onClick={() => setEditingTeacher(t)}
+                className="relative w-12 h-12 rounded-xl bg-emerald-800 text-amber-400 font-bold flex items-center justify-center text-base shadow-sm shrink-0 overflow-hidden cursor-pointer group border border-emerald-700/50"
+                title="Klik untuk ubah foto profil"
+              >
+                {t.photoUrl ? (
+                  <img
+                    src={t.photoUrl}
+                    alt={`Foto ${t.name}`}
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                  />
+                ) : (
+                  <span>{t.name.charAt(0)}</span>
+                )}
+                <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
+                  <Camera className="w-4 h-4 text-amber-300" />
+                </div>
               </div>
               <div className="space-y-0.5">
                 <h4 className="font-bold text-xs text-slate-800 leading-snug">{t.name}</h4>
                 <p className="text-[11px] text-emerald-700 font-semibold">{t.role}</p>
                 <div className="flex items-center gap-2 pt-0.5">
-                  <span className="text-[10px] text-slate-500 font-mono">ID Pegawai: {t.nip}</span>
+                  <span className="text-[10px] text-slate-500 font-mono">ID: {t.nip}</span>
                   <span className="text-[10px] bg-slate-200 text-slate-700 font-mono font-semibold px-1.5 py-0.5 rounded flex items-center gap-0.5" title="PIN Login">
                     <Key className="w-2.5 h-2.5 text-emerald-700" /> {t.pin || '123456'}
                   </span>
