@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ActiveUser, AttendanceLog, WorkScheduleDay, LocationConfig } from '../types';
+import { getTodayString } from '../utils/dateUtils';
 import { LogIn, LogOut, FileEdit, FilePlus, ClipboardCheck, CheckCircle2, MapPin, AlertCircle, ShieldCheck } from 'lucide-react';
 
 interface PresensiTabProps {
@@ -33,7 +34,7 @@ export const PresensiTab: React.FC<PresensiTabProps> = ({
     return () => clearInterval(timer);
   }, []);
 
-  const today = new Date().toISOString().split('T')[0];
+  const today = getTodayString();
   const myTodayLogs = attendanceLogs.filter(l => l.date === today && l.teacherName === currentUser.name);
 
   const masukLog = myTodayLogs.find(l => l.presensiType === 'MASUK');

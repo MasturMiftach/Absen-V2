@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Teacher, AttendanceLog } from '../types';
 import { exportRekapToCSV, exportDetailedReportXLSX } from '../utils/excel';
+import { getCurrentYearAndMonth } from '../utils/dateUtils';
 import { FileText, Filter, Download, Printer, User, Calendar, Table } from 'lucide-react';
 
 interface RekapTabProps {
@@ -10,8 +11,9 @@ interface RekapTabProps {
 }
 
 export const RekapTab: React.FC<RekapTabProps> = ({ teachers, attendanceLogs, showToast }) => {
-  const [selectedBulan, setSelectedBulan] = useState<string>('07');
-  const [selectedTahun, setSelectedTahun] = useState<string>('2026');
+  const { year: currentYear, month: currentMonth } = getCurrentYearAndMonth();
+  const [selectedBulan, setSelectedBulan] = useState<string>(currentMonth);
+  const [selectedTahun, setSelectedTahun] = useState<string>(currentYear);
   const [selectedTeacher, setSelectedTeacher] = useState<string>('SEMUA');
   const [activeTabMode, setActiveTabMode] = useState<'rekap' | 'detail'>('detail');
 
@@ -26,7 +28,8 @@ export const RekapTab: React.FC<RekapTabProps> = ({ teachers, attendanceLogs, sh
   // Filtered detailed logs for selected teacher & period
   const detailedLogs = attendanceLogs.filter(log => {
     const matchTeacher = selectedTeacher === 'SEMUA' || log.teacherName.toLowerCase().includes(selectedTeacher.toLowerCase()) || log.teacherName === selectedTeacher;
-    const [y, m] = log.date.split('-');
+    const dateStr = log.date ? log.date.substring(0, 10) : '';
+    const [y, m] = dateStr.split('-');
     const matchPeriod = y === selectedTahun && m === selectedBulan;
     return matchTeacher && matchPeriod;
   }).sort((a, b) => {
@@ -37,7 +40,8 @@ export const RekapTab: React.FC<RekapTabProps> = ({ teachers, attendanceLogs, sh
   const rekapData = teachers.map((t, idx) => {
     const logs = attendanceLogs.filter(l => {
       if (l.teacherName !== t.name) return false;
-      const [y, m] = l.date.split('-');
+      const dateStr = l.date ? l.date.substring(0, 10) : '';
+      const [y, m] = dateStr.split('-');
       return y === selectedTahun && m === selectedBulan;
     });
 

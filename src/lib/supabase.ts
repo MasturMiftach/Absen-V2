@@ -1,6 +1,7 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { Teacher, WorkScheduleDay, AttendanceLog, LocationConfig } from '../types';
 import { INITIAL_TEACHERS, DEFAULT_SCHEDULE, INITIAL_LOGS, DEFAULT_LOCATION_CONFIG } from '../data/initialData';
+import { normalizeLogsTimezone } from '../utils/dateUtils';
 
 // Access environment variables securely
 const env = (import.meta as unknown as { env?: Record<string, string> }).env || {};
@@ -151,10 +152,10 @@ export async function fetchAttendanceLogs(): Promise<AttendanceLog[]> {
       for (const log of INITIAL_LOGS) {
         await syncLogToSupabase(log);
       }
-      return INITIAL_LOGS;
+      return normalizeLogsTimezone(INITIAL_LOGS);
     }
 
-    return data as AttendanceLog[];
+    return normalizeLogsTimezone(data as AttendanceLog[]);
   } catch (err) {
     console.error('Supabase Connection Exception (fetchAttendanceLogs):', err);
     return INITIAL_LOGS;

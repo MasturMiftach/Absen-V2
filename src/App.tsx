@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Teacher, WorkScheduleDay, AttendanceLog, ActiveUser, TabType, ToastMessage, LocationConfig } from './types';
 import { INITIAL_TEACHERS, DEFAULT_SCHEDULE, INITIAL_LOGS, DEFAULT_LOCATION_CONFIG } from './data/initialData';
 import { calculateDistanceMeters, getCurrentPosition } from './utils/geo';
+import { getTodayString, getLocalTimeString, getLocalDateString } from './utils/dateUtils';
 import {
   subscribeAttendanceLogs,
   subscribeTeachers,
@@ -217,7 +218,7 @@ export default function App() {
       }
     }
 
-    const today = new Date().toISOString().split('T')[0];
+    const today = getTodayString();
 
     // 1. Check if user already logged IZIN or SAKIT today
     const izinLog = attendanceLogs.find(
@@ -278,6 +279,8 @@ export default function App() {
     if (presensiType === 'MASUK') {
       // Waktu Buka Absen Masuk: jamMasuk - bukaAbsenMasukMnt
       const openMasuk = createScheduleTime(todaySch.jamMasuk, -todaySch.bukaAbsenMasukMnt);
+      // Jam Masuk resmi (misal: 07:00)
+      const exactJamMasuk = createScheduleTime(todaySch.jamMasuk, 0);
       // Batas Akhir Absen Masuk (Batas Toleransi Terlambat): jamMasuk + toleransiTerlambatMnt
       const limitMasukTepat = createScheduleTime(todaySch.jamMasuk, todaySch.toleransiTerlambatMnt);
 
@@ -294,14 +297,18 @@ export default function App() {
       if (now > limitMasukTepat) {
         showToast(
           'Di Luar Jadwal Presensi',
-          `Presensi Masuk sudah ditutup! Batas akhir presensi masuk (toleransi terlambat) adalah jam ${formatHHMM(limitMasukTepat)} WIB. Presensi tidak dicatat dalam database.`,
+          `Presensi Masuk sudah ditutup! Batas akhir presensi masuk (toleransi) adalah jam ${formatHHMM(limitMasukTepat)} WIB. Presensi tidak dicatat dalam database.`,
           true
         );
         return; // DO NOT RECORD IN DATABASE
       }
 
       // Inside valid time window!
-      calculatedStatus = 'Datang Tepat Waktu';
+      if (now > exactJamMasuk) {
+        calculatedStatus = 'Terlambat';
+      } else {
+        calculatedStatus = 'Datang Tepat Waktu';
+      }
 
     } else { // PULANG
       // Batas Awal Buka Absen Pulang (Toleransi Pulang Lebih Awal): jamPulang - toleransiPulangMnt
@@ -337,7 +344,7 @@ export default function App() {
       }
     }
 
-    const timeString = now.toLocaleTimeString('id-ID', { hour12: false }) + ' WIB';
+    const timeString = getLocalTimeString(now);
 
     const newLog: AttendanceLog = {
       id: 'log-' + Date.now(),
@@ -385,7 +392,7 @@ export default function App() {
   const handleIzinSubmit = (izinType: 'IZIN' | 'SAKIT', notes: string) => {
     if (!currentUser) return;
 
-    const today = new Date().toISOString().split('T')[0];
+    const today = getTodayString();
     const existingLog = attendanceLogs.find(
       (l) => l.date === today && l.teacherName === currentUser.name
     );
@@ -400,8 +407,8 @@ export default function App() {
     }
 
     const now = new Date();
-    const timeString = now.toLocaleTimeString('id-ID', { hour12: false }) + ' WIB';
-    const dateString = now.toISOString().split('T')[0];
+    const timeString = getLocalTimeString(now);
+    const dateString = getLocalDateString(now);
 
     const newLog: AttendanceLog = {
       id: 'log-' + Date.now(),

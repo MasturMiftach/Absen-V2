@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Teacher, AttendanceLog } from '../types';
+import { getTodayString } from '../utils/dateUtils';
 import { exportLogsToCSV, exportDetailedReportXLSX } from '../utils/excel';
 import { Users, UserCheck, Clock, FileText, UserX, PieChart, MessageSquare, Copy, ExternalLink, Search, Download, Trash2, FileSpreadsheet } from 'lucide-react';
 
@@ -18,7 +19,7 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
 }) => {
   const [searchFilter, setSearchFilter] = useState<string>('');
 
-  const today = new Date().toISOString().split('T')[0];
+  const today = getTodayString();
   const todayLogs = attendanceLogs.filter(l => l.date === today);
 
   const tepatWaktu = todayLogs.filter(l => l.status === 'Datang Tepat Waktu' || l.status === 'Pulang Tepat Waktu' || l.status === 'Tepat Waktu').length;

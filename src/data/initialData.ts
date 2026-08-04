@@ -1,4 +1,5 @@
 import { Teacher, WorkScheduleDay, AttendanceLog, LocationConfig } from '../types';
+import { getTodayString } from '../utils/dateUtils';
 
 export const DEFAULT_LOCATION_CONFIG: LocationConfig = {
   enabled: true,
@@ -27,7 +28,7 @@ export const DEFAULT_SCHEDULE: WorkScheduleDay[] = [
   { hari: 'Minggu', statusHari: 'Libur', jamMasuk: '07:00', jamPulang: '12:00', bukaAbsenMasukMnt: 60, toleransiTerlambatMnt: 15, toleransiPulangMnt: 15, batasAbsenPulangMnt: 120 }
 ];
 
-const todayStr = new Date().toISOString().split('T')[0];
+const todayStr = getTodayString();
 
 export const INITIAL_LOGS: AttendanceLog[] = [
   {

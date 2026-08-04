@@ -150,7 +150,7 @@ export const JadwalTab: React.FC<JadwalTabProps> = ({
           </div>
           <ul className="list-disc list-inside space-y-1 text-[11px] text-slate-700 leading-relaxed">
             <li><strong>Buka Absen Masuk (Mnt)</strong>: Berapa menit sebelum Jam Masuk tombol presensi masuk mulai aktif (Contoh: 60 menit sebelum 07:00 = Buka jam 06:00).</li>
-            <li><strong>Toleransi Terlambat (Mnt)</strong>: Menit tambahan setelah Jam Masuk yang masih dianggap Tepat Waktu (Contoh: 07:00 + 15 mnt = s/d 07:15 Tepat Waktu).</li>
+            <li><strong>Toleransi Terlambat (Mnt)</strong>: Batas waktu maksimal (menit tambahan setelah Jam Masuk) diperbolehkan melakukan presensi masuk dengan status Terlambat (Contoh: Jam Masuk 07:00 + Toleransi 15 mnt = Presensi s/d 07:15 diterima dan dicatat sebagai "Terlambat").</li>
             <li><strong>Toleransi Pulang (Mnt)</strong>: Berapa menit sebelum Jam Pulang tombol presensi pulang mulai dapat diakses.</li>
             <li><strong>Batas Absen Pulang (Mnt)</strong>: Batas maksimum durasi jam pulang diperbolehkan melakukan absen pulang setelah jam kerja berakhir.</li>
           </ul>

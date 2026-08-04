@@ -1,5 +1,6 @@
 import * as XLSX from 'xlsx';
 import { AttendanceLog } from '../types';
+import { getTodayString } from './dateUtils';
 
 export function exportDetailedReportXLSX(
   logs: AttendanceLog[],
@@ -71,7 +72,7 @@ export function exportDetailedReportXLSX(
   XLSX.utils.book_append_sheet(workbook, worksheet, 'Laporan Presensi');
 
   const sanitizedTeacher = selectedTeacher === 'SEMUA' ? 'Semua_Guru' : selectedTeacher.replace(/[^a-zA-Z0-9]/g, '_');
-  const filename = `Laporan_Presensi_${sanitizedTeacher}_${new Date().toISOString().split('T')[0]}.xlsx`;
+  const filename = `Laporan_Presensi_${sanitizedTeacher}_${getTodayString()}.xlsx`;
 
   XLSX.writeFile(workbook, filename);
 }
@@ -94,7 +95,7 @@ export function exportLogsToCSV(logs: AttendanceLog[], filenameStr?: string) {
   const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
-  const filename = filenameStr || `Rekap_Presensi_MI_Soborejo_${new Date().toISOString().split('T')[0]}.csv`;
+  const filename = filenameStr || `Rekap_Presensi_MI_Soborejo_${getTodayString()}.csv`;
   link.setAttribute("href", url);
   link.setAttribute("download", filename);
   document.body.appendChild(link);

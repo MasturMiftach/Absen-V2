@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ActiveUser, TabType } from '../types';
+import { getLocalTimeString } from '../utils/dateUtils';
 import { Landmark, Settings, LogOut, ClipboardList, PieChart, CalendarDays, Users, FileSpreadsheet, BookOpen } from 'lucide-react';
 
 interface NavbarProps {
@@ -25,7 +26,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   useEffect(() => {
     const updateTime = () => {
       const now = new Date();
-      const tStr = now.toLocaleTimeString('id-ID', { hour12: false }) + ' WIB';
+      const tStr = getLocalTimeString(now);
       const dStr = now.toLocaleDateString('id-ID', {
         weekday: 'long',
         year: 'numeric',

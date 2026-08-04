@@ -28,6 +28,7 @@ export interface AttendanceLog {
   time: string;
   date: string; // YYYY-MM-DD
   notes: string;
+  created_at?: string;
 }
 
 export interface ActiveUser {
