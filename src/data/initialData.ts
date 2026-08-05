@@ -1,4 +1,4 @@
-import { Teacher, WorkScheduleDay, AttendanceLog, LocationConfig } from '../types';
+import { Teacher, WorkScheduleDay, AttendanceLog, LocationConfig, Holiday } from '../types';
 import { getTodayString } from '../utils/dateUtils';
 
 export const DEFAULT_LOCATION_CONFIG: LocationConfig = {
@@ -8,6 +8,32 @@ export const DEFAULT_LOCATION_CONFIG: LocationConfig = {
   radiusMeters: 100,
   locationName: "MI Ma'arif Al Ihsan Soborejo"
 };
+
+export const INITIAL_HOLIDAYS: Holiday[] = [
+  // 2026 Holidays
+  { id: 'hol-2026-001', date: '2026-01-01', description: 'Tahun Baru 2026 Masehi', type: 'NASIONAL', isRecurring: true },
+  { id: 'hol-2026-002', date: '2026-01-16', description: 'Isra Mi\'raj Nabi Muhammad SAW 1447 H', type: 'KEAGAMAAN' },
+  { id: 'hol-2026-003', date: '2026-02-17', description: 'Tahun Baru Imlek 2577 Kongzili', type: 'KEAGAMAAN' },
+  { id: 'hol-2026-004', date: '2026-03-19', description: 'Hari Raya Nyepi Tahun Baru Saka 1948', type: 'KEAGAMAAN' },
+  { id: 'hol-2026-005', date: '2026-03-20', description: 'Hari Raya Idul Fitri 1447 H (Hari 1)', type: 'KEAGAMAAN' },
+  { id: 'hol-2026-006', date: '2026-03-21', description: 'Hari Raya Idul Fitri 1447 H (Hari 2)', type: 'KEAGAMAAN' },
+  { id: 'hol-2026-007', date: '2026-04-03', description: 'Wafat Yesus Kristus', type: 'KEAGAMAAN' },
+  { id: 'hol-2026-008', date: '2026-05-01', description: 'Hari Buruh Internasional', type: 'NASIONAL', isRecurring: true },
+  { id: 'hol-2026-009', date: '2026-05-14', description: 'Kenaikan Yesus Kristus', type: 'KEAGAMAAN' },
+  { id: 'hol-2026-010', date: '2026-05-27', description: 'Hari Raya Idul Adha 1447 H', type: 'KEAGAMAAN' },
+  { id: 'hol-2026-011', date: '2026-05-31', description: 'Hari Raya Waisak 2570 BE', type: 'KEAGAMAAN' },
+  { id: 'hol-2026-012', date: '2026-06-01', description: 'Hari Lahir Pancasila', type: 'NASIONAL', isRecurring: true },
+  { id: 'hol-2026-013', date: '2026-06-16', description: 'Tahun Baru Islam 1448 Hijriah', type: 'KEAGAMAAN' },
+  { id: 'hol-2026-014', date: '2026-08-17', description: 'Hari Proklamasi Kemerdekaan RI', type: 'NASIONAL', isRecurring: true },
+  { id: 'hol-2026-015', date: '2026-08-25', description: 'Maulid Nabi Muhammad SAW 1448 H', type: 'KEAGAMAAN' },
+  { id: 'hol-2026-016', date: '2026-10-22', description: 'Hari Santri Nasional', type: 'NASIONAL', isRecurring: true },
+  { id: 'hol-2026-017', date: '2026-11-25', description: 'Hari Guru Nasional', type: 'NASIONAL', isRecurring: true },
+  { id: 'hol-2026-018', date: '2026-12-25', description: 'Hari Raya Natal', type: 'KEAGAMAAN', isRecurring: true },
+
+  // Sample Custom Holidays
+  { id: 'hol-2026-019', date: '2026-03-22', description: 'Cuti Bersama Idul Fitri MI Soborejo', type: 'KHUSUS' },
+  { id: 'hol-2026-020', date: '2026-03-23', description: 'Cuti Bersama Idul Fitri MI Soborejo', type: 'KHUSUS' }
+];
 
 export const INITIAL_TEACHERS: Teacher[] = [
   { id: 1, name: "Siti Rahmawati, S.Pd.I", nip: "198802142019032012", role: "Wali Kelas 1", pin: "123456", photoUrl: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80" },

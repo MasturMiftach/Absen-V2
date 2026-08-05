@@ -1,6 +1,6 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { Teacher, WorkScheduleDay, AttendanceLog, LocationConfig } from '../types';
-import { INITIAL_TEACHERS, DEFAULT_SCHEDULE, INITIAL_LOGS, DEFAULT_LOCATION_CONFIG } from '../data/initialData';
+import { Teacher, WorkScheduleDay, AttendanceLog, LocationConfig, Holiday } from '../types';
+import { INITIAL_TEACHERS, DEFAULT_SCHEDULE, INITIAL_LOGS, DEFAULT_LOCATION_CONFIG, INITIAL_HOLIDAYS } from '../data/initialData';
 import { normalizeLogsTimezone } from '../utils/dateUtils';
 
 // Access environment variables securely
@@ -351,6 +351,114 @@ export async function syncLocationConfigToSupabase(config: LocationConfig): Prom
   }
 }
 
+// ========================================================
+// 5. MANAJEMEN HARI LIBUR (holidays)
+// ========================================================
+export function getLocalHolidays(): Holiday[] {
+  try {
+    const raw = localStorage.getItem('mi_soborejo_holidays');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch (e) {
+    console.warn('Gagal membaca local holidays:', e);
+  }
+  return INITIAL_HOLIDAYS;
+}
+
+export function saveLocalHolidays(holidays: Holiday[]) {
+  try {
+    localStorage.setItem('mi_soborejo_holidays', JSON.stringify(holidays));
+  } catch (e) {
+    console.warn('Gagal menyimpan local holidays:', e);
+  }
+}
+
+export async function fetchHolidays(): Promise<Holiday[]> {
+  try {
+    const { data, error } = await supabase
+      .from('holidays')
+      .select('*')
+      .order('date', { ascending: true });
+
+    if (error) {
+      console.warn('Supabase Warning: Gagal mengambil "holidays", menggunakan data lokal:', error.message);
+      return getLocalHolidays();
+    }
+
+    if (!data || data.length === 0) {
+      // Pre-seed initial holidays
+      for (const h of INITIAL_HOLIDAYS) {
+        await syncHolidayToSupabase(h);
+      }
+      saveLocalHolidays(INITIAL_HOLIDAYS);
+      return INITIAL_HOLIDAYS;
+    }
+
+    const holidays = data.map(item => ({
+      id: String(item.id),
+      date: String(item.date),
+      description: String(item.description),
+      type: (item.type as 'NASIONAL' | 'KEAGAMAAN' | 'KHUSUS') || 'NASIONAL',
+      isRecurring: Boolean(item.isRecurring)
+    })) as Holiday[];
+
+    saveLocalHolidays(holidays);
+    return holidays;
+  } catch (err) {
+    console.warn('Supabase Exception (fetchHolidays), fallback ke lokal:', err);
+    return getLocalHolidays();
+  }
+}
+
+export function subscribeHolidays(onUpdate: (holidays: Holiday[]) => void) {
+  fetchHolidays().then(onUpdate);
+
+  const channel = supabase
+    .channel('realtime:holidays')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'holidays' }, () => {
+      fetchHolidays().then(onUpdate);
+    })
+    .subscribe((status, err) => {
+      if (status === 'CHANNEL_ERROR' || err) {
+        console.warn('Supabase Realtime Channel (holidays) warning:', err);
+      }
+    });
+
+  return () => {
+    supabase.removeChannel(channel);
+  };
+}
+
+export async function syncHolidayToSupabase(holiday: Holiday): Promise<void> {
+  try {
+    const { error } = await supabase.from('holidays').upsert({
+      id: holiday.id,
+      date: holiday.date,
+      description: holiday.description,
+      type: holiday.type,
+      isRecurring: holiday.isRecurring || false
+    });
+    if (error) {
+      console.warn('Supabase Warning: Gagal simpan holiday ke Supabase:', error.message);
+    }
+  } catch (err) {
+    console.warn('Supabase Exception (syncHolidayToSupabase):', err);
+  }
+}
+
+export async function deleteHolidayFromSupabase(holidayId: string): Promise<void> {
+  try {
+    const { error } = await supabase.from('holidays').delete().eq('id', holidayId);
+    if (error) {
+      console.warn('Supabase Warning: Gagal hapus holiday dari Supabase:', error.message);
+    }
+  } catch (err) {
+    console.warn('Supabase Exception (deleteHolidayFromSupabase):', err);
+  }
+}
+
 export const SUPABASE_SQL_SETUP = `-- Script Setup SQL Supabase
 -- Buka Supabase Dashboard > SQL Editor > Run Query berikut:
 
@@ -396,11 +504,20 @@ CREATE TABLE IF NOT EXISTS location_config (
   "locationName" TEXT DEFAULT 'MI Ma''arif Al Ihsan Soborejo'
 );
 
+CREATE TABLE IF NOT EXISTS holidays (
+  id TEXT PRIMARY KEY,
+  date TEXT NOT NULL,
+  description TEXT NOT NULL,
+  type TEXT DEFAULT 'NASIONAL',
+  "isRecurring" BOOLEAN DEFAULT false
+);
+
 -- Enable RLS & Policies
 ALTER TABLE teachers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE work_schedule ENABLE ROW LEVEL SECURITY;
 ALTER TABLE attendance_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE location_config ENABLE ROW LEVEL SECURITY;
+ALTER TABLE holidays ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Public access teachers" ON teachers;
 CREATE POLICY "Public access teachers" ON teachers FOR ALL USING (true) WITH CHECK (true);
@@ -414,9 +531,13 @@ CREATE POLICY "Public access attendance_logs" ON attendance_logs FOR ALL USING (
 DROP POLICY IF EXISTS "Public access location_config" ON location_config;
 CREATE POLICY "Public access location_config" ON location_config FOR ALL USING (true) WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Public access holidays" ON holidays;
+CREATE POLICY "Public access holidays" ON holidays FOR ALL USING (true) WITH CHECK (true);
+
 -- Enable Realtime
 ALTER PUBLICATION supabase_realtime ADD TABLE teachers;
 ALTER PUBLICATION supabase_realtime ADD TABLE work_schedule;
 ALTER PUBLICATION supabase_realtime ADD TABLE attendance_logs;
 ALTER PUBLICATION supabase_realtime ADD TABLE location_config;
+ALTER PUBLICATION supabase_realtime ADD TABLE holidays;
 `;

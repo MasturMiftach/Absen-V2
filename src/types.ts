@@ -49,6 +49,14 @@ export interface LocationConfig {
   locationName: string;
 }
 
+export interface Holiday {
+  id: string;
+  date: string; // YYYY-MM-DD
+  description: string;
+  type: 'NASIONAL' | 'KEAGAMAAN' | 'KHUSUS';
+  isRecurring?: boolean;
+}
+
 export type TabType = 'absensi' | 'dashboard' | 'jadwal' | 'guru' | 'rekap' | 'panduan';
 
 export interface ToastMessage {

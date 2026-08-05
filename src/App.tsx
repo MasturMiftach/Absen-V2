@@ -1,20 +1,23 @@
 import { useState, useEffect } from 'react';
-import { Teacher, WorkScheduleDay, AttendanceLog, ActiveUser, TabType, ToastMessage, LocationConfig } from './types';
-import { INITIAL_TEACHERS, DEFAULT_SCHEDULE, INITIAL_LOGS, DEFAULT_LOCATION_CONFIG } from './data/initialData';
+import { Teacher, WorkScheduleDay, AttendanceLog, ActiveUser, TabType, ToastMessage, LocationConfig, Holiday } from './types';
+import { INITIAL_TEACHERS, DEFAULT_SCHEDULE, INITIAL_LOGS, DEFAULT_LOCATION_CONFIG, INITIAL_HOLIDAYS } from './data/initialData';
 import { calculateDistanceMeters, getCurrentPosition } from './utils/geo';
-import { getTodayString, getLocalTimeString, getLocalDateString } from './utils/dateUtils';
+import { getTodayString, getLocalTimeString, getLocalDateString, getHolidayForDate } from './utils/dateUtils';
 import {
   subscribeAttendanceLogs,
   subscribeTeachers,
   subscribeSchedule,
   subscribeLocationConfig,
+  subscribeHolidays,
   syncLogToSupabase,
   deleteLogFromSupabase,
   syncTeacherToSupabase,
   deleteTeacherFromSupabase,
   syncScheduleToSupabase,
   syncTeachersToSupabase,
-  syncLocationConfigToSupabase
+  syncLocationConfigToSupabase,
+  syncHolidayToSupabase,
+  deleteHolidayFromSupabase
 } from './lib/supabase';
 
 import { ToastContainer } from './components/Toast';
@@ -33,6 +36,7 @@ export default function App() {
   const [schedule, setSchedule] = useState<WorkScheduleDay[]>(DEFAULT_SCHEDULE);
   const [attendanceLogs, setAttendanceLogs] = useState<AttendanceLog[]>(INITIAL_LOGS);
   const [locationConfig, setLocationConfig] = useState<LocationConfig>(DEFAULT_LOCATION_CONFIG);
+  const [holidays, setHolidays] = useState<Holiday[]>(INITIAL_HOLIDAYS);
 
   const [userDistanceMeters, setUserDistanceMeters] = useState<number | null>(null);
   const [isLocating, setIsLocating] = useState<boolean>(false);
@@ -80,11 +84,18 @@ export default function App() {
       }
     });
 
+    const unsubHolidays = subscribeHolidays((remoteHolidays) => {
+      if (remoteHolidays && remoteHolidays.length > 0) {
+        setHolidays(remoteHolidays);
+      }
+    });
+
     return () => {
       unsubLogs();
       unsubTeachers();
       unsubSchedule();
       unsubLocation();
+      unsubHolidays();
     };
   }, []);
 
@@ -249,14 +260,14 @@ export default function App() {
 
     const now = new Date();
     const todaySch = getTodaySchedule(now);
+    const todayHoliday = getHolidayForDate(today, holidays);
 
     // 1. Check if today is a Holiday
-    if (todaySch.statusHari === 'Libur') {
-      showToast(
-        'Di Luar Jadwal Presensi',
-        `Hari ini (${todaySch.hari}) adalah hari Libur. Presensi tidak dibuka dan tidak dicatat.`,
-        true
-      );
+    if (todaySch.statusHari === 'Libur' || todayHoliday) {
+      const msg = todayHoliday
+        ? `Hari ini adalah Hari Libur (${todayHoliday.description}). Presensi harian ditutup.`
+        : `Hari ini (${todaySch.hari}) adalah hari Libur. Presensi tidak dibuka dan tidak dicatat.`;
+      showToast('Di Luar Jadwal Presensi', msg, true);
       return; // DO NOT RECORD IN DATABASE
     }
 
@@ -500,6 +511,24 @@ export default function App() {
     syncTeachersToSupabase(importedList);
   };
 
+  const handleAddHoliday = (newHoliday: Holiday) => {
+    setHolidays((prev) => [...prev, newHoliday]);
+    syncHolidayToSupabase(newHoliday);
+  };
+
+  const handleDeleteHoliday = (id: string) => {
+    setHolidays((prev) => prev.filter((h) => h.id !== id));
+    deleteHolidayFromSupabase(id);
+  };
+
+  const handleResetHolidays = () => {
+    setHolidays(INITIAL_HOLIDAYS);
+    for (const h of INITIAL_HOLIDAYS) {
+      syncHolidayToSupabase(h);
+    }
+    showToast('Reset Hari Libur', 'Daftar hari libur dikembalikan ke standar awal.');
+  };
+
   if (!currentUser) {
     return (
       <>
@@ -530,6 +559,7 @@ export default function App() {
             currentUser={currentUser}
             attendanceLogs={attendanceLogs}
             schedule={schedule}
+            holidays={holidays}
             locationConfig={locationConfig}
             userDistanceMeters={userDistanceMeters}
             isLocating={isLocating}
@@ -543,6 +573,7 @@ export default function App() {
           <DashboardTab
             teachers={teachers}
             attendanceLogs={attendanceLogs}
+            holidays={holidays}
             onDeleteLog={handleDeleteLog}
             showToast={showToast}
           />
@@ -556,6 +587,10 @@ export default function App() {
             onResetSchedule={handleResetSchedule}
             locationConfig={locationConfig}
             onSaveLocationConfig={handleSaveLocationConfig}
+            holidays={holidays}
+            onAddHoliday={handleAddHoliday}
+            onDeleteHoliday={handleDeleteHoliday}
+            onResetHolidays={handleResetHolidays}
             showToast={showToast}
           />
         )}

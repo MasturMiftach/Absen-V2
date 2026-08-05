@@ -1,4 +1,4 @@
-import { AttendanceLog } from '../types';
+import { AttendanceLog, Holiday } from '../types';
 
 /**
  * Returns a YYYY-MM-DD date string in local client timezone.
@@ -98,4 +98,29 @@ export function formatDateIndonesian(dateStr: string): string {
   const dayNum = parseInt(d, 10);
   const monthName = months[m] || m;
   return `${dayNum} ${monthName} ${y}`;
+}
+
+/**
+ * Checks if a date (YYYY-MM-DD) matches any holiday in the list,
+ * supporting both exact date match and annual recurring date match.
+ */
+export function getHolidayForDate(dateStr: string, holidays: Holiday[]): Holiday | null {
+  if (!dateStr || !Array.isArray(holidays)) return null;
+  const cleanDate = dateStr.substring(0, 10);
+  
+  // 1. Direct date match (e.g. "2026-08-17" === "2026-08-17")
+  const directMatch = holidays.find(h => h.date === cleanDate);
+  if (directMatch) return directMatch;
+
+  // 2. Recurring match (e.g. isRecurring && "08-17" === "08-17")
+  if (cleanDate.length >= 10 && cleanDate.includes('-')) {
+    const monthDay = cleanDate.substring(5); // "MM-DD"
+    const recurringMatch = holidays.find(h => {
+      if (!h.isRecurring || !h.date || h.date.length < 10) return false;
+      return h.date.substring(5) === monthDay;
+    });
+    if (recurringMatch) return recurringMatch;
+  }
+
+  return null;
 }

@@ -1,7 +1,8 @@
 import React from 'react';
-import { WorkScheduleDay, LocationConfig } from '../types';
+import { WorkScheduleDay, LocationConfig, Holiday } from '../types';
 import { Clock, RotateCcw, Save, Info } from 'lucide-react';
 import { LocationConfigCard } from './LocationConfigCard';
+import { HolidayConfigCard } from './HolidayConfigCard';
 
 interface JadwalTabProps {
   schedule: WorkScheduleDay[];
@@ -10,6 +11,10 @@ interface JadwalTabProps {
   onResetSchedule: () => void;
   locationConfig: LocationConfig;
   onSaveLocationConfig: (config: LocationConfig) => void;
+  holidays: Holiday[];
+  onAddHoliday: (holiday: Holiday) => void;
+  onDeleteHoliday: (id: string) => void;
+  onResetHolidays?: () => void;
   showToast: (title: string, message: string, isError?: boolean) => void;
 }
 
@@ -20,10 +25,23 @@ export const JadwalTab: React.FC<JadwalTabProps> = ({
   onResetSchedule,
   locationConfig,
   onSaveLocationConfig,
+  holidays,
+  onAddHoliday,
+  onDeleteHoliday,
+  onResetHolidays,
   showToast
 }) => {
   return (
     <div className="space-y-6">
+      {/* MANAJEMEN HARI LIBUR NASIONAL & KEAGAMAAN */}
+      <HolidayConfigCard
+        holidays={holidays}
+        onAddHoliday={onAddHoliday}
+        onDeleteHoliday={onDeleteHoliday}
+        onResetHolidays={onResetHolidays}
+        showToast={showToast}
+      />
+
       {/* GEOLOCATION CONFIG CARD */}
       <LocationConfigCard
         locationConfig={locationConfig}

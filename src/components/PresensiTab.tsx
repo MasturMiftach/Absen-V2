@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
-import { ActiveUser, AttendanceLog, WorkScheduleDay, LocationConfig } from '../types';
-import { getTodayString } from '../utils/dateUtils';
-import { LogIn, LogOut, FileEdit, FilePlus, ClipboardCheck, CheckCircle2, MapPin, AlertCircle, ShieldCheck } from 'lucide-react';
+import { ActiveUser, AttendanceLog, WorkScheduleDay, LocationConfig, Holiday } from '../types';
+import { getTodayString, getHolidayForDate } from '../utils/dateUtils';
+import { LogIn, LogOut, FileEdit, FilePlus, ClipboardCheck, CheckCircle2, MapPin, AlertCircle, ShieldCheck, Calendar, Sparkles } from 'lucide-react';
 
 interface PresensiTabProps {
   currentUser: ActiveUser;
   attendanceLogs: AttendanceLog[];
   schedule: WorkScheduleDay[];
+  holidays?: Holiday[];
   locationConfig?: LocationConfig;
   userDistanceMeters?: number | null;
   isLocating?: boolean;
@@ -19,6 +20,7 @@ export const PresensiTab: React.FC<PresensiTabProps> = ({
   currentUser,
   attendanceLogs,
   schedule,
+  holidays = [],
   locationConfig,
   userDistanceMeters,
   isLocating,
@@ -56,7 +58,8 @@ export const PresensiTab: React.FC<PresensiTabProps> = ({
     return `${hh}:${mm}`;
   };
 
-  const isHoliday = todaySch.statusHari === 'Libur';
+  const todayHoliday = getHolidayForDate(today, holidays);
+  const isHoliday = todaySch.statusHari === 'Libur' || Boolean(todayHoliday);
   const openMasukStr = todaySch ? formatAddMinutes(todaySch.jamMasuk, -todaySch.bukaAbsenMasukMnt) : '06:00';
   const limitMasukTepatStr = todaySch ? formatAddMinutes(todaySch.jamMasuk, todaySch.toleransiTerlambatMnt) : '07:15';
   const limitPulangTepatStr = todaySch ? formatAddMinutes(todaySch.jamPulang, -todaySch.toleransiPulangMnt) : '14:15';
@@ -217,6 +220,29 @@ export const PresensiTab: React.FC<PresensiTabProps> = ({
           )}
         </div>
       </div>
+
+      {/* HOLIDAY SPECIAL BANNER */}
+      {isHoliday && (
+        <div className="bg-gradient-to-r from-amber-500/10 via-emerald-500/10 to-blue-500/10 border-2 border-amber-400 rounded-2xl p-4 sm:p-5 shadow-sm flex items-start gap-3.5 text-slate-800">
+          <div className="p-3 bg-amber-400 text-slate-900 rounded-2xl shrink-0 shadow-md">
+            <Calendar className="w-6 h-6" />
+          </div>
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-black uppercase tracking-wider text-amber-900 bg-amber-200/80 px-2.5 py-0.5 rounded-full border border-amber-300">
+                {todayHoliday ? `HARI LIBUR ${todayHoliday.type}` : 'HARI LIBUR RUTIN'}
+              </span>
+              <Sparkles className="w-4 h-4 text-amber-500" />
+            </div>
+            <h3 className="text-base sm:text-lg font-extrabold text-slate-900">
+              {todayHoliday ? todayHoliday.description : `Hari Ini (${dayName}) Adalah Hari Libur`}
+            </h3>
+            <p className="text-xs text-slate-600 leading-relaxed">
+              Selamat menikmati hari libur! Layanan presensi rutin ditutup dan tombol absen otomatis dikunci.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* TODAY SCHEDULE INFO WIDGET */}
       <div className="bg-emerald-900/10 border border-emerald-800/20 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-700">

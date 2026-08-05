@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
-import { Teacher, AttendanceLog } from '../types';
-import { getTodayString } from '../utils/dateUtils';
+import { Teacher, AttendanceLog, Holiday } from '../types';
+import { getTodayString, getHolidayForDate } from '../utils/dateUtils';
 import { exportLogsToCSV, exportDetailedReportXLSX } from '../utils/excel';
-import { Users, UserCheck, Clock, FileText, UserX, PieChart, MessageSquare, Copy, ExternalLink, Search, Download, Trash2, FileSpreadsheet } from 'lucide-react';
+import { Users, UserCheck, Clock, FileText, UserX, PieChart, MessageSquare, Copy, ExternalLink, Search, Download, Trash2, FileSpreadsheet, Calendar, Sparkles } from 'lucide-react';
 
 interface DashboardTabProps {
   teachers: Teacher[];
   attendanceLogs: AttendanceLog[];
+  holidays?: Holiday[];
   onDeleteLog: (id: string) => void;
   showToast: (title: string, message: string, isError?: boolean) => void;
 }
@@ -14,12 +15,14 @@ interface DashboardTabProps {
 export const DashboardTab: React.FC<DashboardTabProps> = ({
   teachers,
   attendanceLogs,
+  holidays = [],
   onDeleteLog,
   showToast
 }) => {
   const [searchFilter, setSearchFilter] = useState<string>('');
 
   const today = getTodayString();
+  const todayHoliday = getHolidayForDate(today, holidays);
   const todayLogs = attendanceLogs.filter(l => l.date === today);
 
   const tepatWaktu = todayLogs.filter(l => l.status === 'Datang Tepat Waktu' || l.status === 'Pulang Tepat Waktu' || l.status === 'Tepat Waktu').length;
@@ -61,6 +64,29 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
   return (
     <div className="space-y-6">
       
+      {/* TODAY HOLIDAY ALERT BANNER */}
+      {todayHoliday && (
+        <div className="bg-amber-500/10 border-2 border-amber-400 rounded-2xl p-4 shadow-sm flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-amber-400 text-slate-900 rounded-xl font-bold">
+              <Calendar className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="text-[11px] font-black uppercase text-amber-900 flex items-center gap-1.5">
+                <span>PEMBERITAHUAN HARI LIBUR ({todayHoliday.type})</span>
+                <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+              </div>
+              <p className="text-sm font-bold text-slate-900 mt-0.5">
+                Hari ini ({todayHoliday.date}): {todayHoliday.description}
+              </p>
+            </div>
+          </div>
+          <span className="hidden sm:inline-block px-3 py-1 bg-amber-200 text-amber-900 text-xs font-extrabold rounded-full border border-amber-300">
+            Libur Resmi
+          </span>
+        </div>
+      )}
+
       {/* KPI Summary Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center space-x-3">
