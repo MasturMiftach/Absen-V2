@@ -3,6 +3,46 @@ import { Teacher } from '../types';
 import { X, FileSpreadsheet, UserPlus, Settings, Hand, Stethoscope, Database, Copy, Check, Key, Pencil, Camera, Upload, Trash2, User } from 'lucide-react';
 import { getSupabaseCredentials, saveSupabaseCredentials, isSupabaseConnected, SUPABASE_SQL_SETUP } from '../lib/supabase';
 
+function compressImage(file: File, maxWidth = 350, maxHeight = 350, quality = 0.85): Promise<string> {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > maxWidth) {
+            height = Math.round((height * maxWidth) / width);
+            width = maxWidth;
+          }
+        } else {
+          if (height > maxHeight) {
+            width = Math.round((width * maxHeight) / height);
+            height = maxHeight;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL('image/jpeg', quality));
+        } else {
+          resolve(e.target?.result as string);
+        }
+      };
+      img.onerror = () => resolve(e.target?.result as string);
+      img.src = e.target?.result as string;
+    };
+    reader.onerror = () => resolve('');
+    reader.readAsDataURL(file);
+  });
+}
+
 interface IzinModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -286,22 +326,23 @@ export const AddTeacherModal: React.FC<AddTeacherModalProps> = ({ isOpen, onClos
 
   if (!isOpen) return null;
 
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 3 * 1024 * 1024) {
-      alert('Ukuran foto terlalu besar. Maksimal 3MB.');
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Ukuran foto terlalu besar. Maksimal 5MB.');
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = (evt) => {
-      if (evt.target?.result) {
-        setPhotoUrl(evt.target.result as string);
+    try {
+      const compressed = await compressImage(file, 350, 350, 0.85);
+      if (compressed) {
+        setPhotoUrl(compressed);
       }
-    };
-    reader.readAsDataURL(file);
+    } catch (err) {
+      console.error('Gagal mengompres gambar:', err);
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -364,7 +405,9 @@ export const AddTeacherModal: React.FC<AddTeacherModalProps> = ({ isOpen, onClos
                     </button>
                   )}
                 </div>
-                <p className="text-[10px] text-slate-500">Format JPG/PNG, maks. 3MB</p>
+                <p className="text-[10px] text-emerald-700 font-medium">
+                  ✓ Foto tersimpan ke Supabase Database (Multi-Perangkat)
+                </p>
               </div>
             </div>
           </div>
@@ -476,22 +519,23 @@ export const EditTeacherModal: React.FC<EditTeacherModalProps> = ({
 
   if (!isOpen || !teacher) return null;
 
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 3 * 1024 * 1024) {
-      alert('Ukuran foto terlalu besar. Maksimal 3MB.');
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Ukuran foto terlalu besar. Maksimal 5MB.');
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = (evt) => {
-      if (evt.target?.result) {
-        setPhotoUrl(evt.target.result as string);
+    try {
+      const compressed = await compressImage(file, 350, 350, 0.85);
+      if (compressed) {
+        setPhotoUrl(compressed);
       }
-    };
-    reader.readAsDataURL(file);
+    } catch (err) {
+      console.error('Gagal mengompres gambar:', err);
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -550,7 +594,9 @@ export const EditTeacherModal: React.FC<EditTeacherModalProps> = ({
                     </button>
                   )}
                 </div>
-                <p className="text-[10px] text-slate-500">Format JPG/PNG, maks. 3MB</p>
+                <p className="text-[10px] text-emerald-700 font-medium">
+                  ✓ Foto tersimpan ke Supabase Database (Multi-Perangkat)
+                </p>
               </div>
             </div>
           </div>
