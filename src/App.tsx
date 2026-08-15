@@ -50,7 +50,16 @@ export default function App() {
     return saved ? JSON.parse(saved) : null;
   });
 
-  const [activeTab, setActiveTab] = useState<TabType>('absensi');
+  const [activeTab, setActiveTab] = useState<TabType>(() => {
+    const saved = localStorage.getItem('mi_soborejo_logged_user');
+    if (saved) {
+      try {
+        const user = JSON.parse(saved);
+        if (user.isAdmin) return 'dashboard';
+      } catch {}
+    }
+    return 'absensi';
+  });
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
   // Modals visibility state
@@ -69,6 +78,23 @@ export default function App() {
     const unsubTeachers = subscribeTeachers((remoteTeachers) => {
       if (remoteTeachers && remoteTeachers.length > 0) {
         setTeachers(remoteTeachers);
+        // Real-time synchronization of logged-in user profile photo across devices
+        setCurrentUser((prevUser) => {
+          if (!prevUser || prevUser.isAdmin) return prevUser;
+          const matching = remoteTeachers.find((t) => t.id === prevUser.id);
+          if (matching && (matching.photoUrl !== prevUser.photoUrl || matching.name !== prevUser.name || matching.role !== prevUser.role)) {
+            const updated: ActiveUser = {
+              ...prevUser,
+              name: matching.name,
+              nip: matching.nip,
+              role: matching.role,
+              photoUrl: matching.photoUrl
+            };
+            localStorage.setItem('mi_soborejo_logged_user', JSON.stringify(updated));
+            return updated;
+          }
+          return prevUser;
+        });
       }
     });
 
@@ -171,7 +197,7 @@ export default function App() {
     setCurrentUser(user);
     localStorage.setItem('mi_soborejo_logged_user', JSON.stringify(user));
     showToast('Login Berhasil!', `Selamat datang, ${user.name}`);
-    setActiveTab('absensi');
+    setActiveTab(user.isAdmin ? 'dashboard' : 'absensi');
   };
 
   const handleLogout = () => {
@@ -473,17 +499,21 @@ export default function App() {
     showToast('Jadwal Direset', 'Jadwal kerja dikembalikan ke pengaturan default.');
   };
 
-  const handleAddTeacher = (newTeacherData: Omit<Teacher, 'id'>) => {
+  const handleAddTeacher = async (newTeacherData: Omit<Teacher, 'id'>) => {
     const newTeacher: Teacher = {
       id: Date.now(),
       ...newTeacherData
     };
     setTeachers((prev) => [...prev, newTeacher]);
-    syncTeacherToSupabase(newTeacher);
-    showToast('Guru Ditambahkan', `${newTeacher.name} berhasil didaftarkan dan tersinkron ke Database Supabase.`);
+    const res = await syncTeacherToSupabase(newTeacher);
+    if (res.success) {
+      showToast('Guru Ditambahkan', `${newTeacher.name} berhasil didaftarkan dan tersinkron ke Database Supabase.`);
+    } else {
+      showToast('Tersimpan Lokal', `Data tersimpan di perangkat, namun Supabase memberi catatan: ${res.error || 'Gagal sync'}`, true);
+    }
   };
 
-  const handleUpdateTeacher = (updatedTeacher: Teacher) => {
+  const handleUpdateTeacher = async (updatedTeacher: Teacher) => {
     setTeachers((prev) => prev.map((t) => (t.id === updatedTeacher.id ? updatedTeacher : t)));
     if (currentUser && currentUser.id === updatedTeacher.id) {
       const updatedUser: ActiveUser = {
@@ -496,8 +526,12 @@ export default function App() {
       setCurrentUser(updatedUser);
       localStorage.setItem('mi_soborejo_logged_user', JSON.stringify(updatedUser));
     }
-    syncTeacherToSupabase(updatedTeacher);
-    showToast('Data Diperbarui', `Data ${updatedTeacher.name} berhasil diperbarui dan tersinkron ke Database Supabase.`);
+    const res = await syncTeacherToSupabase(updatedTeacher);
+    if (res.success) {
+      showToast('Data Diperbarui', `Data & foto profil ${updatedTeacher.name} berhasil tersinkron ke Supabase Cloud (Multi-Perangkat).`);
+    } else {
+      showToast('Tersimpan Lokal', `Perubahan tersimpan lokal. Catatan Supabase: ${res.error || 'Gagal sync'}`, true);
+    }
   };
 
   const handleDeleteTeacher = (id: number) => {
@@ -554,7 +588,7 @@ export default function App() {
 
       {/* MAIN CONTENT CONTAINER */}
       <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-6 flex-grow w-full">
-        {activeTab === 'absensi' && (
+        {activeTab === 'absensi' && !currentUser.isAdmin && (
           <PresensiTab
             currentUser={currentUser}
             attendanceLogs={attendanceLogs}

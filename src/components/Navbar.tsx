@@ -132,17 +132,19 @@ export const Navbar: React.FC<NavbarProps> = ({
       {/* MAIN NAVIGATION BUTTONS */}
       <nav className="bg-emerald-950/90 border-t border-emerald-800/50 backdrop-blur-md px-3 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto flex space-x-1 overflow-x-auto py-2 custom-scrollbar">
-          <button
-            onClick={() => onSelectTab('absensi')}
-            className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap transition flex items-center gap-2 ${
-              activeTab === 'absensi'
-                ? 'bg-emerald-600 text-white shadow'
-                : 'text-emerald-100 hover:bg-emerald-800/50'
-            }`}
-          >
-            <ClipboardList className="w-4 h-4" />
-            <span>{currentUser.isAdmin ? 'Form Presensi' : 'Presensi Guru'}</span>
-          </button>
+          {!currentUser.isAdmin && (
+            <button
+              onClick={() => onSelectTab('absensi')}
+              className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold whitespace-nowrap transition flex items-center gap-2 ${
+                activeTab === 'absensi'
+                  ? 'bg-emerald-600 text-white shadow'
+                  : 'text-emerald-100 hover:bg-emerald-800/50'
+              }`}
+            >
+              <ClipboardList className="w-4 h-4" />
+              <span>Presensi Guru</span>
+            </button>
+          )}
 
           {currentUser.isAdmin && (
             <>

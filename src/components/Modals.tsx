@@ -261,16 +261,39 @@ export const ConfigModal: React.FC<ConfigModalProps> = ({
           </div>
 
           {showSql && (
-            <div className="mt-2 space-y-1.5 pt-2 border-t border-slate-200">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-bold text-slate-700">Script SQL Setup Tabel (Jalankan di Supabase SQL Editor):</span>
+            <div className="mt-2 space-y-2 pt-2 border-t border-slate-200">
+              {/* Quick Migration Banner for Photo Column */}
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-2.5 space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold text-amber-900">
+                    💡 Migrasi Kolom Foto Guru (Jika foto belum tersimpan):
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText('ALTER TABLE teachers ADD COLUMN IF NOT EXISTS "photoUrl" TEXT;');
+                      setCopiedSql(true);
+                      setTimeout(() => setCopiedSql(false), 3000);
+                    }}
+                    className="px-2 py-0.5 bg-amber-700 hover:bg-amber-800 text-white rounded text-[10px] font-bold flex items-center gap-1 transition"
+                  >
+                    <Copy className="w-2.5 h-2.5" /> Copy Query Migrasi Foto
+                  </button>
+                </div>
+                <code className="block bg-amber-100/80 text-amber-950 p-1.5 rounded text-[10px] font-mono select-all">
+                  ALTER TABLE teachers ADD COLUMN IF NOT EXISTS "photoUrl" TEXT;
+                </code>
+              </div>
+
+              <div className="flex items-center justify-between pt-1">
+                <span className="text-[11px] font-bold text-slate-700">Script SQL Setup Lengkap:</span>
                 <button
                   type="button"
                   onClick={handleCopySql}
                   className="px-2.5 py-1 bg-emerald-700 hover:bg-emerald-800 text-white rounded text-[10px] font-bold flex items-center gap-1 transition"
                 >
                   {copiedSql ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
-                  {copiedSql ? 'Tercopy!' : 'Copy Script SQL'}
+                  {copiedSql ? 'Tercopy!' : 'Copy Script Lengkap'}
                 </button>
               </div>
               <pre className="p-2.5 bg-slate-900 text-slate-200 text-[10px] font-mono rounded-lg overflow-x-auto max-h-40 leading-relaxed custom-scrollbar">

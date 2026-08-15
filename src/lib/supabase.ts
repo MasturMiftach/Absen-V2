@@ -39,6 +39,28 @@ export function isSupabaseConnected(): boolean {
   return Boolean(url && key && url !== 'https://placeholder.supabase.co');
 }
 
+// Helper to store & retrieve teachers locally as fallback
+function getLocalTeachers(): Teacher[] {
+  try {
+    const saved = localStorage.getItem('mi_soborejo_teachers');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch (err) {
+    console.error('Error reading local teachers:', err);
+  }
+  return INITIAL_TEACHERS;
+}
+
+function saveLocalTeachers(teachers: Teacher[]): void {
+  try {
+    localStorage.setItem('mi_soborejo_teachers', JSON.stringify(teachers));
+  } catch (err) {
+    console.error('Error saving local teachers:', err);
+  }
+}
+
 // ========================================================
 // 1. DATA GURU (teachers)
 // ========================================================
@@ -51,7 +73,7 @@ export async function fetchTeachers(): Promise<Teacher[]> {
 
     if (error) {
       console.error('Supabase Error: Gagal mengambil data guru dari tabel "teachers":', error);
-      return INITIAL_TEACHERS;
+      return getLocalTeachers();
     }
 
     if (!data || data.length === 0) {
@@ -59,10 +81,21 @@ export async function fetchTeachers(): Promise<Teacher[]> {
       return INITIAL_TEACHERS;
     }
 
-    return data as Teacher[];
+    // Robust parsing supporting "photoUrl", "photo_url", or "photourl"
+    const parsedTeachers: Teacher[] = (data as any[]).map((item) => ({
+      id: Number(item.id),
+      name: String(item.name || ''),
+      nip: String(item.nip || ''),
+      role: String(item.role || 'Guru'),
+      pin: String(item.pin || '123456'),
+      photoUrl: String(item.photoUrl || item.photo_url || item.photourl || '')
+    }));
+
+    saveLocalTeachers(parsedTeachers);
+    return parsedTeachers;
   } catch (err) {
     console.error('Supabase Connection Exception (fetchTeachers):', err);
-    return INITIAL_TEACHERS;
+    return getLocalTeachers();
   }
 }
 
@@ -85,21 +118,74 @@ export function subscribeTeachers(onUpdate: (teachers: Teacher[]) => void) {
   };
 }
 
-export async function syncTeacherToSupabase(teacher: Teacher): Promise<void> {
+export async function syncTeacherToSupabase(teacher: Teacher): Promise<{ success: boolean; error?: string }> {
   try {
-    const { error } = await supabase.from('teachers').upsert({
+    // Attempt 1: Standard double-quoted camelCase "photoUrl"
+    const payload1 = {
       id: Number(teacher.id),
       name: teacher.name,
       nip: teacher.nip || '',
       role: teacher.role || 'Guru',
-      pin: teacher.pin || '',
+      pin: teacher.pin || '123456',
       photoUrl: teacher.photoUrl || ''
-    });
+    };
+
+    let { error } = await supabase.from('teachers').upsert(payload1);
+
+    // If failed due to column name mismatch (e.g. column "photoUrl" does not exist)
+    if (error && (error.message?.toLowerCase().includes('column') || error.message?.toLowerCase().includes('photourl') || (error as any).code === '42703')) {
+      console.warn('Kolom "photoUrl" tidak cocok, mencoba fallback "photo_url"...');
+      // Attempt 2: snake_case "photo_url"
+      const payload2 = {
+        id: Number(teacher.id),
+        name: teacher.name,
+        nip: teacher.nip || '',
+        role: teacher.role || 'Guru',
+        pin: teacher.pin || '123456',
+        photo_url: teacher.photoUrl || ''
+      };
+      const res2 = await supabase.from('teachers').upsert(payload2);
+      if (!res2.error) {
+        error = null;
+      } else {
+        // Attempt 3: lowercase "photourl"
+        const payload3 = {
+          id: Number(teacher.id),
+          name: teacher.name,
+          nip: teacher.nip || '',
+          role: teacher.role || 'Guru',
+          pin: teacher.pin || '123456',
+          photourl: teacher.photoUrl || ''
+        };
+        const res3 = await supabase.from('teachers').upsert(payload3);
+        if (!res3.error) {
+          error = null;
+        } else {
+          // Attempt 4: If table doesn't have any photo column yet, save basic teacher info and warn
+          const payloadNoPhoto = {
+            id: Number(teacher.id),
+            name: teacher.name,
+            nip: teacher.nip || '',
+            role: teacher.role || 'Guru',
+            pin: teacher.pin || '123456'
+          };
+          const res4 = await supabase.from('teachers').upsert(payloadNoPhoto);
+          if (!res4.error) {
+            console.warn('Tabel teachers di Supabase belum memiliki kolom photoUrl. Jalankan script SQL: ALTER TABLE teachers ADD COLUMN IF NOT EXISTS "photoUrl" TEXT;');
+            error = { message: 'Kolom "photoUrl" belum ada di tabel Supabase. Jalankan query SQL: ALTER TABLE teachers ADD COLUMN IF NOT EXISTS "photoUrl" TEXT;' } as any;
+          }
+        }
+      }
+    }
+
     if (error) {
       console.error('Supabase Error: Gagal menyimpan data guru ke tabel "teachers":', error);
+      return { success: false, error: error.message };
     }
-  } catch (err) {
+    return { success: true };
+  } catch (err: any) {
     console.error('Supabase Connection Exception (syncTeacherToSupabase):', err);
+    return { success: false, error: err?.message || String(err) };
   }
 }
 
@@ -121,10 +207,25 @@ export async function syncTeachersToSupabase(teachers: Teacher[]): Promise<void>
       name: t.name,
       nip: t.nip || '',
       role: t.role || 'Guru',
-      pin: t.pin || '',
+      pin: t.pin || '123456',
       photoUrl: t.photoUrl || ''
     }));
-    const { error } = await supabase.from('teachers').upsert(records);
+    let { error } = await supabase.from('teachers').upsert(records);
+    if (error && (error.message?.toLowerCase().includes('column') || (error as any).code === '42703')) {
+      // Fallback with photo_url
+      const fallbackRecords = teachers.map((t) => ({
+        id: Number(t.id),
+        name: t.name,
+        nip: t.nip || '',
+        role: t.role || 'Guru',
+        pin: t.pin || '123456',
+        photo_url: t.photoUrl || ''
+      }));
+      const res2 = await supabase.from('teachers').upsert(fallbackRecords);
+      if (!res2.error) {
+        error = null;
+      }
+    }
     if (error) {
       console.error('Supabase Error: Gagal sync banyak guru ke tabel "teachers":', error);
     }
@@ -470,6 +571,9 @@ CREATE TABLE IF NOT EXISTS teachers (
   pin TEXT,
   "photoUrl" TEXT
 );
+
+-- Pastikan kolom photoUrl tersedia jika tabel teachers sudah ada sebelumnya
+ALTER TABLE teachers ADD COLUMN IF NOT EXISTS "photoUrl" TEXT;
 
 CREATE TABLE IF NOT EXISTS work_schedule (
   hari TEXT PRIMARY KEY,
