@@ -1,30 +1,39 @@
 {
-  "short_name": "Presensi MI",
+  "id": "/",
   "name": "Presensi MI Ma'arif Al Ihsan Soborejo",
+  "short_name": "Presensi MI",
   "description": "Sistem Absensi Kehadiran & Jurnal Digital Guru MI Ma'arif Al Ihsan Soborejo",
-  "icons": [
-    {
-      "src": "/icon-192.jpg",
-      "type": "image/jpeg",
-      "sizes": "192x192",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/icon-512.jpg",
-      "type": "image/jpeg",
-      "sizes": "512x512",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/app-icon.jpg",
-      "type": "image/jpeg",
-      "sizes": "1024x1024",
-      "purpose": "any maskable"
-    }
-  ],
   "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
   "background_color": "#064e3b",
   "theme_color": "#064e3b",
-  "display": "standalone",
-  "orientation": "portrait"
+  "categories": ["education", "productivity"],
+  "icons": [
+    {
+      "src": "/pwa-192x192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-512x512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-maskable-512x512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "type": "image/png",
+      "sizes": "180x180",
+      "purpose": "any"
+    }
+  ]
 }

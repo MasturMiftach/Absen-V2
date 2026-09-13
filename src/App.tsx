@@ -30,6 +30,7 @@ import { GuruTab } from './components/GuruTab';
 import { RekapTab } from './components/RekapTab';
 import { PanduanTab } from './components/PanduanTab';
 import { IzinModal, ConfigModal, AddTeacherModal } from './components/Modals';
+import { PWABanner } from './components/PWABanner';
 
 export default function App() {
   const [teachers, setTeachers] = useState<Teacher[]>(INITIAL_TEACHERS);
@@ -568,6 +569,7 @@ export default function App() {
       <>
         <ToastContainer toasts={toasts} onDismiss={handleDismissToast} />
         <LoginView teachers={teachers} onLoginSuccess={handleLoginSuccess} showToast={showToast} />
+        <PWABanner />
       </>
     );
   }
@@ -679,6 +681,9 @@ export default function App() {
         />
         <span>MI Ma'arif Al Ihsan Soborejo &copy; 2026 • Kec. Pringsurat, Kab. Temanggung • Sistem Presensi Digital Guru</span>
       </footer>
+
+      {/* PWA Floating Mobile Banner & Offline Detector */}
+      <PWABanner />
     </div>
   );
 }

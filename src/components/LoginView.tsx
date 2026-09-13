@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Teacher, ActiveUser } from '../types';
 import { UserCheck, Shield, Eye, EyeOff, ArrowRight, Lock, Landmark } from 'lucide-react';
+import { PWAInstallButton } from './PWAInstallButton';
 
 interface LoginViewProps {
   teachers: Teacher[];
@@ -246,6 +247,11 @@ export const LoginView: React.FC<LoginViewProps> = ({ teachers, onLoginSuccess, 
               </button>
             </form>
           )}
+
+          {/* PWA Mobile Shortcut Install Card */}
+          <div className="mt-6 pt-5 border-t border-slate-100">
+            <PWAInstallButton variant="login" />
+          </div>
 
           {/* Quick Help Footer */}
           <div className="mt-6 pt-4 border-t border-slate-100 text-center space-y-1.5">

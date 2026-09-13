@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ActiveUser, TabType } from '../types';
 import { getLocalTimeString } from '../utils/dateUtils';
 import { Landmark, Settings, LogOut, ClipboardList, PieChart, CalendarDays, Users, FileSpreadsheet, BookOpen } from 'lucide-react';
+import { PWAInstallButton } from './PWAInstallButton';
 
 interface NavbarProps {
   currentUser: ActiveUser;
@@ -107,6 +108,8 @@ export const Navbar: React.FC<NavbarProps> = ({
                   <div className="text-[10px] text-amber-400 font-semibold uppercase truncate max-w-[140px]">{currentUser.role}</div>
                 </div>
               </div>
+
+              <PWAInstallButton variant="navbar" />
 
               <button
                 onClick={onOpenConfig}
