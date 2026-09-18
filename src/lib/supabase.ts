@@ -303,6 +303,38 @@ export async function syncLogToSupabase(log: AttendanceLog): Promise<void> {
   }
 }
 
+export async function syncLogsToSupabase(logs: AttendanceLog[]): Promise<{ success: boolean; count: number; error?: string }> {
+  if (!logs || logs.length === 0) return { success: true, count: 0 };
+  try {
+    const records = logs.map((log) => ({
+      id: String(log.id),
+      teacherName: log.teacherName,
+      nip: log.nip || '',
+      role: log.role || 'Guru',
+      presensiType: log.presensiType,
+      status: log.status,
+      time: log.time,
+      date: log.date,
+      notes: log.notes || ''
+    }));
+
+    // Chunk records to prevent Supabase / PostgREST payload limits
+    const chunkSize = 50;
+    for (let i = 0; i < records.length; i += chunkSize) {
+      const chunk = records.slice(i, i + chunkSize);
+      const { error } = await supabase.from('attendance_logs').upsert(chunk);
+      if (error) {
+        console.error('Supabase Error syncLogsToSupabase chunk:', error);
+        return { success: false, count: i, error: error.message };
+      }
+    }
+    return { success: true, count: records.length };
+  } catch (err: any) {
+    console.error('Supabase Connection Exception (syncLogsToSupabase):', err);
+    return { success: false, count: 0, error: err?.message || String(err) };
+  }
+}
+
 export async function deleteLogFromSupabase(logId: string): Promise<void> {
   try {
     const { error } = await supabase.from('attendance_logs').delete().eq('id', String(logId));

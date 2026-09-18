@@ -10,6 +10,7 @@ import {
   subscribeLocationConfig,
   subscribeHolidays,
   syncLogToSupabase,
+  syncLogsToSupabase,
   deleteLogFromSupabase,
   syncTeacherToSupabase,
   deleteTeacherFromSupabase,
@@ -19,6 +20,7 @@ import {
   syncHolidayToSupabase,
   deleteHolidayFromSupabase
 } from './lib/supabase';
+import { syncLogsToFirestore } from './lib/firebase';
 
 import { ToastContainer } from './components/Toast';
 import { LoginView } from './components/LoginView';
@@ -481,6 +483,36 @@ export default function App() {
     showToast('Log Dihapus', 'Data presensi berhasil dihapus dari Cloud Database.');
   };
 
+  const handleBulkAddLogs = async (newLogs: AttendanceLog[]) => {
+    if (!newLogs || newLogs.length === 0) return;
+
+    // Update local state immediately for fast responsive UI
+    setAttendanceLogs((prev) => [...newLogs, ...prev]);
+
+    // Persist to Supabase in batches
+    const res = await syncLogsToSupabase(newLogs);
+    if (!res.success) {
+      console.warn('Sync logs to Supabase partial warning:', res.error);
+    }
+
+    // Persist to Firestore if available
+    syncLogsToFirestore(newLogs).catch((err) => {
+      console.warn('Firestore bulk sync warning:', err);
+    });
+
+    // Send to Google Sheets web app if URL configured
+    if (gasUrl) {
+      for (const log of newLogs) {
+        fetch(gasUrl, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(log),
+        }).catch(() => {});
+      }
+    }
+  };
+
   const handleUpdateScheduleItem = (index: number, field: keyof WorkScheduleDay, value: string | number) => {
     setSchedule((prev) => {
       const updated = [...prev];
@@ -608,9 +640,11 @@ export default function App() {
         {activeTab === 'dashboard' && currentUser.isAdmin && (
           <DashboardTab
             teachers={teachers}
+            schedule={schedule}
             attendanceLogs={attendanceLogs}
             holidays={holidays}
             onDeleteLog={handleDeleteLog}
+            onBulkAddLogs={handleBulkAddLogs}
             showToast={showToast}
           />
         )}

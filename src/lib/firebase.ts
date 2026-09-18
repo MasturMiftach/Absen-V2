@@ -175,6 +175,21 @@ export async function syncLogToFirestore(log: AttendanceLog): Promise<void> {
 }
 
 /**
+ * Save multiple attendance logs to Firestore in batch
+ */
+export async function syncLogsToFirestore(logs: AttendanceLog[]): Promise<void> {
+  if (!db || !logs || logs.length === 0) return;
+  try {
+    for (const log of logs) {
+      const docRef = doc(db, 'attendance_logs', String(log.id));
+      await setDoc(docRef, log, { merge: true });
+    }
+  } catch (err) {
+    console.warn("Firestore sync logs error:", err);
+  }
+}
+
+/**
  * Delete attendance log from Firestore
  */
 export async function deleteLogFromFirestore(logId: string): Promise<void> {

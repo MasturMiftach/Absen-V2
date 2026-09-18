@@ -1,25 +1,31 @@
 import React, { useState } from 'react';
-import { Teacher, AttendanceLog, Holiday } from '../types';
+import { Teacher, AttendanceLog, Holiday, WorkScheduleDay } from '../types';
 import { getTodayString, getHolidayForDate } from '../utils/dateUtils';
 import { exportLogsToCSV, exportDetailedReportXLSX } from '../utils/excel';
-import { Users, UserCheck, Clock, FileText, UserX, PieChart, MessageSquare, Copy, ExternalLink, Search, Download, Trash2, FileSpreadsheet, Calendar, Sparkles } from 'lucide-react';
+import { Users, UserCheck, Clock, FileText, UserX, PieChart, MessageSquare, Copy, ExternalLink, Search, Download, Trash2, FileSpreadsheet, Calendar, Sparkles, CalendarCheck, ShieldCheck } from 'lucide-react';
+import { AutoFillAttendanceModal } from './AutoFillAttendanceModal';
 
 interface DashboardTabProps {
   teachers: Teacher[];
+  schedule: WorkScheduleDay[];
   attendanceLogs: AttendanceLog[];
   holidays?: Holiday[];
   onDeleteLog: (id: string) => void;
+  onBulkAddLogs: (newLogs: AttendanceLog[]) => Promise<void>;
   showToast: (title: string, message: string, isError?: boolean) => void;
 }
 
 export const DashboardTab: React.FC<DashboardTabProps> = ({
   teachers,
+  schedule,
   attendanceLogs,
   holidays = [],
   onDeleteLog,
+  onBulkAddLogs,
   showToast
 }) => {
   const [searchFilter, setSearchFilter] = useState<string>('');
+  const [isAutoFillOpen, setIsAutoFillOpen] = useState<boolean>(false);
 
   const today = getTodayString();
   const todayHoliday = getHolidayForDate(today, holidays);
@@ -137,6 +143,43 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
             <div className="text-[11px] font-semibold text-slate-500">Belum Absen</div>
             <div className="text-xl font-black text-rose-600">{belumAbsen}</div>
           </div>
+        </div>
+      </div>
+
+      {/* QUICK ADMIN TOOL: AUTO-FILL MISSING ATTENDANCES */}
+      <div className="bg-gradient-to-r from-emerald-950 via-emerald-900 to-teal-950 rounded-3xl p-5 sm:p-6 text-white shadow-xl border-2 border-emerald-600/60 flex flex-col md:flex-row md:items-center justify-between gap-5 relative overflow-hidden">
+        {/* Subtle decorative background shine */}
+        <div className="absolute -right-10 -top-10 w-48 h-48 bg-amber-400/10 rounded-full blur-2xl pointer-events-none" />
+
+        <div className="space-y-2 z-10 max-w-xl">
+          <div className="flex items-center gap-2">
+            <span className="px-2.5 py-0.5 rounded-md bg-amber-400 text-emerald-950 font-black text-[10px] uppercase tracking-wider shadow-sm">
+              Alat Kelola Admin
+            </span>
+            <span className="text-emerald-200 text-xs font-semibold flex items-center gap-1">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" /> Hari Libur & Hari Minggu Otomatis Dilewati
+            </span>
+          </div>
+
+          <h3 className="text-base sm:text-lg font-black text-white flex items-center gap-2.5 tracking-tight">
+            <CalendarCheck className="w-5 h-5 text-amber-400 shrink-0" />
+            Lengkapi Daftar Kehadiran Kosong Semua Guru
+          </h3>
+
+          <p className="text-xs text-emerald-100/90 leading-relaxed">
+            Guru atau staf lupa presensi? Lengkapi seluruh tanggal kehadiran yang kosong untuk semua guru sekaligus dengan mudah dan cepat. Sistem secara cerdas hanya mengisi hari kerja madrasah dan mengecualikan seluruh hari libur.
+          </p>
+        </div>
+
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 z-10 shrink-0">
+          <button
+            type="button"
+            onClick={() => setIsAutoFillOpen(true)}
+            className="px-5 py-3.5 bg-gradient-to-r from-amber-400 via-amber-300 to-amber-400 hover:from-amber-300 hover:to-amber-400 text-emerald-950 font-black text-xs sm:text-sm rounded-2xl shadow-xl shadow-amber-400/20 transition flex items-center justify-center gap-2.5 transform active:scale-95 border-2 border-amber-300"
+          >
+            <Sparkles className="w-4 h-4 text-emerald-950" />
+            <span>Lengkapi Absen Kosong Sekarang</span>
+          </button>
         </div>
       </div>
 
@@ -258,6 +301,13 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
               <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" />
             </div>
             <button
+              onClick={() => setIsAutoFillOpen(true)}
+              className="px-3.5 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-emerald-950 rounded-xl text-xs font-black transition flex items-center gap-1.5 shadow-sm border border-amber-300 active:scale-95"
+              title="Lengkapi kehadiran guru yang kosong/lupa absen"
+            >
+              <CalendarCheck className="w-3.5 h-3.5 text-emerald-950" /> Lengkapi Absen Kosong
+            </button>
+            <button
               onClick={handleExportXLSX}
               className="px-3.5 py-2 bg-emerald-800 hover:bg-emerald-900 text-white rounded-xl text-xs font-semibold transition flex items-center gap-1.5 shadow-sm"
               title="Download Excel format standar (seperti screenshot)"
@@ -327,6 +377,18 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
           </table>
         </div>
       </div>
+
+      {/* AUTO-FILL ATTENDANCE MODAL */}
+      <AutoFillAttendanceModal
+        isOpen={isAutoFillOpen}
+        onClose={() => setIsAutoFillOpen(false)}
+        teachers={teachers}
+        schedule={schedule}
+        holidays={holidays}
+        attendanceLogs={attendanceLogs}
+        onBulkAddLogs={onBulkAddLogs}
+        showToast={showToast}
+      />
 
     </div>
   );
