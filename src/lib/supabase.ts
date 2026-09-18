@@ -242,6 +242,7 @@ export async function fetchAttendanceLogs(): Promise<AttendanceLog[]> {
     const { data, error } = await supabase
       .from('attendance_logs')
       .select('*')
+      .order('date', { ascending: false })
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -284,6 +285,14 @@ export function subscribeAttendanceLogs(onUpdate: (logs: AttendanceLog[]) => voi
 
 export async function syncLogToSupabase(log: AttendanceLog): Promise<void> {
   try {
+    const cleanDate = log.date ? log.date.substring(0, 10) : '';
+    let createdAt = log.created_at;
+    if (!createdAt && cleanDate) {
+      const rawTime = log.time ? log.time.replace(/[^0-9:]/g, '').trim() : '07:00:00';
+      const cleanTime = rawTime.length >= 5 ? (rawTime.length === 5 ? `${rawTime}:00` : rawTime.substring(0, 8)) : '07:00:00';
+      createdAt = `${cleanDate}T${cleanTime}+07:00`;
+    }
+
     const { error } = await supabase.from('attendance_logs').upsert({
       id: String(log.id),
       teacherName: log.teacherName,
@@ -292,8 +301,9 @@ export async function syncLogToSupabase(log: AttendanceLog): Promise<void> {
       presensiType: log.presensiType,
       status: log.status,
       time: log.time,
-      date: log.date,
-      notes: log.notes || ''
+      date: cleanDate,
+      notes: log.notes || '',
+      ...(createdAt ? { created_at: createdAt } : {})
     });
     if (error) {
       console.error('Supabase Error: Gagal menginput log presensi ke tabel "attendance_logs":', error);
@@ -306,17 +316,28 @@ export async function syncLogToSupabase(log: AttendanceLog): Promise<void> {
 export async function syncLogsToSupabase(logs: AttendanceLog[]): Promise<{ success: boolean; count: number; error?: string }> {
   if (!logs || logs.length === 0) return { success: true, count: 0 };
   try {
-    const records = logs.map((log) => ({
-      id: String(log.id),
-      teacherName: log.teacherName,
-      nip: log.nip || '',
-      role: log.role || 'Guru',
-      presensiType: log.presensiType,
-      status: log.status,
-      time: log.time,
-      date: log.date,
-      notes: log.notes || ''
-    }));
+    const records = logs.map((log) => {
+      const cleanDate = log.date ? log.date.substring(0, 10) : '';
+      let createdAt = log.created_at;
+      if (!createdAt && cleanDate) {
+        const rawTime = log.time ? log.time.replace(/[^0-9:]/g, '').trim() : '07:00:00';
+        const cleanTime = rawTime.length >= 5 ? (rawTime.length === 5 ? `${rawTime}:00` : rawTime.substring(0, 8)) : '07:00:00';
+        createdAt = `${cleanDate}T${cleanTime}+07:00`;
+      }
+
+      return {
+        id: String(log.id),
+        teacherName: log.teacherName,
+        nip: log.nip || '',
+        role: log.role || 'Guru',
+        presensiType: log.presensiType,
+        status: log.status,
+        time: log.time,
+        date: cleanDate,
+        notes: log.notes || '',
+        ...(createdAt ? { created_at: createdAt } : {})
+      };
+    });
 
     // Chunk records to prevent Supabase / PostgREST payload limits
     const chunkSize = 50;

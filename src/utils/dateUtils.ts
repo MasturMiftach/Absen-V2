@@ -54,25 +54,37 @@ export function getCurrentYearAndMonth(d: Date = new Date()): { year: string; mo
 }
 
 /**
- * Normalizes an AttendanceLog to ensure its `date` field accurately reflects the local client timezone.
- * If `created_at` timestamp exists (from Supabase), it converts the absolute timestamp to client local YYYY-MM-DD.
+ * Normalizes an AttendanceLog to ensure its `date` field accurately reflects the attendance calendar date.
+ * IMPORTANT: Preserves `log.date` as the primary source of truth.
+ * Only falls back to `created_at` if `log.date` is completely empty/undefined.
  */
 export function normalizeLogTimezone(log: AttendanceLog): AttendanceLog {
   if (!log) return log;
-  let cleanDate = log.date;
+  let cleanDate = '';
 
-  if (log.created_at) {
+  // 1. Primary: Preserve log.date if provided (e.g. "2026-09-05")
+  if (log.date && typeof log.date === 'string') {
+    const trimmed = log.date.trim();
+    if (trimmed.includes('T')) {
+      cleanDate = trimmed.split('T')[0];
+    } else if (trimmed.length >= 10 && /^\d{4}-\d{2}-\d{2}/.test(trimmed)) {
+      cleanDate = trimmed.substring(0, 10);
+    } else {
+      cleanDate = trimmed;
+    }
+  }
+
+  // 2. Secondary fallback: only if date is not present, derive from created_at
+  if (!cleanDate && log.created_at) {
     const d = new Date(log.created_at);
     if (!isNaN(d.getTime())) {
       cleanDate = getLocalDateString(d);
     }
-  } else if (cleanDate && cleanDate.includes('T')) {
-    cleanDate = cleanDate.split('T')[0];
   }
 
   return {
     ...log,
-    date: cleanDate
+    date: cleanDate || log.date || getTodayString()
   };
 }
 

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Teacher, AttendanceLog, Holiday, WorkScheduleDay } from '../types';
-import { getTodayString, getHolidayForDate } from '../utils/dateUtils';
+import { getTodayString, getHolidayForDate, formatDateIndonesian } from '../utils/dateUtils';
 import { exportLogsToCSV, exportDetailedReportXLSX } from '../utils/excel';
 import { Users, UserCheck, Clock, FileText, UserX, PieChart, MessageSquare, Copy, ExternalLink, Search, Download, Trash2, FileSpreadsheet, Calendar, Sparkles, CalendarCheck, ShieldCheck } from 'lucide-react';
 import { AutoFillAttendanceModal } from './AutoFillAttendanceModal';
@@ -37,10 +37,17 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
   const totalGuru = teachers.length;
   const belumAbsen = Math.max(0, totalGuru - todayLogs.length);
 
-  const filteredLogs = attendanceLogs.filter(l => {
-    const text = (l.teacherName + ' ' + l.role + ' ' + l.status + ' ' + l.notes).toLowerCase();
-    return text.includes(searchFilter.toLowerCase());
-  });
+  const filteredLogs = attendanceLogs
+    .filter(l => {
+      const text = (l.teacherName + ' ' + l.role + ' ' + l.status + ' ' + l.notes + ' ' + (l.date || '')).toLowerCase();
+      return text.includes(searchFilter.toLowerCase());
+    })
+    .sort((a, b) => {
+      const dateA = a.date || '';
+      const dateB = b.date || '';
+      if (dateA !== dateB) return dateB.localeCompare(dateA);
+      return (b.time || '').localeCompare(a.time || '');
+    });
 
   const waReminderMessage = `Assalamu'alaikum Wr. Wb. Bapak/Ibu Guru MI Ma'arif Al Ihsan Soborejo, mengingatkan untuk mengisi presensi kehadiran hari ini melalui portal absensi web madrasah. Terima kasih.`;
 
@@ -321,7 +328,7 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
           <table className="w-full text-left text-xs text-slate-700">
             <thead className="bg-slate-50 text-slate-700 uppercase font-bold text-[10px] tracking-wider border-b border-slate-200">
               <tr>
-                <th className="py-3.5 px-4">Waktu</th>
+                <th className="py-3.5 px-4">Waktu & Tanggal</th>
                 <th className="py-3.5 px-4">Nama Guru</th>
                 <th className="py-3.5 px-4">Jabatan / Kelas</th>
                 <th className="py-3.5 px-4">Jenis</th>
@@ -350,7 +357,12 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
 
                   return (
                     <tr key={log.id} className="hover:bg-slate-50 transition">
-                      <td className="py-3 px-4 font-mono font-semibold text-slate-600">{log.time}</td>
+                      <td className="py-3 px-4">
+                        <div className="font-mono font-semibold text-slate-700">{log.time}</div>
+                        <div className="text-[11px] font-sans font-medium text-emerald-700">
+                          {formatDateIndonesian(log.date)}
+                        </div>
+                      </td>
                       <td className="py-3 px-4 font-bold text-slate-800">{log.teacherName}</td>
                       <td className="py-3 px-4 text-slate-600">{log.role}</td>
                       <td className="py-3 px-4 font-semibold text-slate-700">{log.presensiType}</td>

@@ -108,8 +108,8 @@ export const AutoFillAttendanceModal: React.FC<AutoFillAttendanceModalProps> = (
     const dates: string[] = [];
     const [sy, sm, sd] = startDate.split('-').map(Number);
     const [ey, em, ed] = endDate.split('-').map(Number);
-    const current = new Date(sy, sm - 1, sd);
-    const end = new Date(ey, em - 1, ed);
+    const current = new Date(sy, sm - 1, sd, 12, 0, 0);
+    const end = new Date(ey, em - 1, ed, 12, 0, 0);
 
     while (current <= end) {
       dates.push(getLocalDateString(current));
@@ -133,7 +133,7 @@ export const AutoFillAttendanceModal: React.FC<AutoFillAttendanceModalProps> = (
 
     for (const dateStr of dateRangeList) {
       const [y, m, d] = dateStr.split('-').map(Number);
-      const dateObj = new Date(y, m - 1, d);
+      const dateObj = new Date(y, m - 1, d, 12, 0, 0);
       const dayName = dayNames[dateObj.getDay()];
 
       // Schedule config for that day
@@ -253,6 +253,10 @@ export const AutoFillAttendanceModal: React.FC<AutoFillAttendanceModalProps> = (
             }
           }
 
+          const rawTimeOnly = timeStr.replace(/[^0-9:]/g, '').trim();
+          const cleanTime = rawTimeOnly.length >= 5 ? (rawTimeOnly.length === 5 ? `${rawTimeOnly}:00` : rawTimeOnly.substring(0, 8)) : '07:00:00';
+          const createdAtDate = `${item.date}T${cleanTime}+07:00`;
+
           const newLog: AttendanceLog = {
             id,
             teacherName: item.teacher.name,
@@ -263,6 +267,7 @@ export const AutoFillAttendanceModal: React.FC<AutoFillAttendanceModalProps> = (
             time: timeStr,
             date: item.date,
             notes: notesText.trim() || 'Dilengkapi oleh Admin',
+            created_at: createdAtDate,
           };
 
           generatedLogs.push(newLog);
