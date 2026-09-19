@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Teacher, AttendanceLog } from '../types';
 import { exportRekapToCSV, exportDetailedReportXLSX } from '../utils/excel';
 import { getCurrentYearAndMonth } from '../utils/dateUtils';
+import { findAndDeduplicateLogs } from '../utils/attendanceUtils';
 import { FileText, Filter, Download, Printer, User, Calendar, Table } from 'lucide-react';
 
 interface RekapTabProps {
@@ -25,43 +26,52 @@ export const RekapTab: React.FC<RekapTabProps> = ({ teachers, attendanceLogs, sh
 
   const periodText = `01 ${bulanNames[selectedBulan]} ${selectedTahun} s/d 31 ${bulanNames[selectedBulan]} ${selectedTahun}`;
 
+  // Safe deduplicated logs ensures no double counting in reports
+  const safeAttendanceLogs = useMemo(() => {
+    return findAndDeduplicateLogs(attendanceLogs).deduplicatedLogs;
+  }, [attendanceLogs]);
+
   // Filtered detailed logs for selected teacher & period
-  const detailedLogs = attendanceLogs.filter(log => {
-    const matchTeacher = selectedTeacher === 'SEMUA' || log.teacherName.toLowerCase().includes(selectedTeacher.toLowerCase()) || log.teacherName === selectedTeacher;
-    const dateStr = log.date ? log.date.substring(0, 10) : '';
-    const [y, m] = dateStr.split('-');
-    const matchPeriod = y === selectedTahun && m === selectedBulan;
-    return matchTeacher && matchPeriod;
-  }).sort((a, b) => {
-    if (a.date !== b.date) return b.date.localeCompare(a.date);
-    return b.time.localeCompare(a.time);
-  });
-
-  const rekapData = teachers.map((t, idx) => {
-    const logs = attendanceLogs.filter(l => {
-      if (l.teacherName !== t.name) return false;
-      const dateStr = l.date ? l.date.substring(0, 10) : '';
+  const detailedLogs = useMemo(() => {
+    return safeAttendanceLogs.filter(log => {
+      const matchTeacher = selectedTeacher === 'SEMUA' || log.teacherName.toLowerCase().includes(selectedTeacher.toLowerCase()) || log.teacherName === selectedTeacher;
+      const dateStr = log.date ? log.date.substring(0, 10) : '';
       const [y, m] = dateStr.split('-');
-      return y === selectedTahun && m === selectedBulan;
+      const matchPeriod = y === selectedTahun && m === selectedBulan;
+      return matchTeacher && matchPeriod;
+    }).sort((a, b) => {
+      if (a.date !== b.date) return b.date.localeCompare(a.date);
+      return b.time.localeCompare(a.time);
     });
+  }, [safeAttendanceLogs, selectedTeacher, selectedTahun, selectedBulan]);
 
-    const tepatWaktu = logs.filter(l => l.status === 'Datang Tepat Waktu' || l.status === 'Pulang Tepat Waktu' || l.status === 'Tepat Waktu').length;
-    const terlambat = logs.filter(l => l.status === 'Terlambat' || l.status === 'Pulang Sebelum Waktu').length;
-    const izinSakit = logs.filter(l => l.status === 'IZIN' || l.status === 'SAKIT').length;
-    
-    const totalWorkingDays = 22;
-    const percent = Math.min(100, Math.round(((tepatWaktu + terlambat) / totalWorkingDays) * 100));
+  const rekapData = useMemo(() => {
+    return teachers.map((t, idx) => {
+      const logs = safeAttendanceLogs.filter(l => {
+        if (l.teacherName !== t.name) return false;
+        const dateStr = l.date ? l.date.substring(0, 10) : '';
+        const [y, m] = dateStr.split('-');
+        return y === selectedTahun && m === selectedBulan;
+      });
 
-    return {
-      no: idx + 1,
-      name: t.name,
-      nip: t.nip,
-      tepatWaktu,
-      terlambat,
-      izinSakit,
-      percent
-    };
-  });
+      const tepatWaktu = logs.filter(l => l.status === 'Datang Tepat Waktu' || l.status === 'Pulang Tepat Waktu' || l.status === 'Tepat Waktu').length;
+      const terlambat = logs.filter(l => l.status === 'Terlambat' || l.status === 'Pulang Sebelum Waktu').length;
+      const izinSakit = logs.filter(l => l.status === 'IZIN' || l.status === 'SAKIT').length;
+      
+      const totalWorkingDays = 22;
+      const percent = Math.min(100, Math.round(((tepatWaktu + terlambat) / totalWorkingDays) * 100));
+
+      return {
+        no: idx + 1,
+        name: t.name,
+        nip: t.nip,
+        tepatWaktu,
+        terlambat,
+        izinSakit,
+        percent
+      };
+    });
+  }, [teachers, safeAttendanceLogs, selectedTahun, selectedBulan]);
 
   const handleExportDetailed = () => {
     exportDetailedReportXLSX(

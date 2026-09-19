@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Teacher, AttendanceLog, Holiday, WorkScheduleDay } from '../types';
 import { getTodayString, getHolidayForDate, formatDateIndonesian } from '../utils/dateUtils';
 import { exportLogsToCSV, exportDetailedReportXLSX } from '../utils/excel';
-import { Users, UserCheck, Clock, FileText, UserX, PieChart, MessageSquare, Copy, ExternalLink, Search, Download, Trash2, FileSpreadsheet, Calendar, Sparkles, CalendarCheck, ShieldCheck } from 'lucide-react';
+import { findAndDeduplicateLogs } from '../utils/attendanceUtils';
+import { Users, UserCheck, Clock, FileText, UserX, PieChart, MessageSquare, Copy, ExternalLink, Search, Download, Trash2, FileSpreadsheet, Calendar, Sparkles, CalendarCheck, ShieldCheck, AlertCircle, RefreshCw, Loader2 } from 'lucide-react';
 import { AutoFillAttendanceModal } from './AutoFillAttendanceModal';
 
 interface DashboardTabProps {
@@ -12,6 +13,8 @@ interface DashboardTabProps {
   holidays?: Holiday[];
   onDeleteLog: (id: string) => void;
   onBulkAddLogs: (newLogs: AttendanceLog[]) => Promise<void>;
+  onRefreshLogs?: () => Promise<void>;
+  onCleanDuplicateLogs?: () => Promise<number>;
   showToast: (title: string, message: string, isError?: boolean) => void;
 }
 
@@ -22,10 +25,27 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
   holidays = [],
   onDeleteLog,
   onBulkAddLogs,
+  onRefreshLogs,
+  onCleanDuplicateLogs,
   showToast
 }) => {
   const [searchFilter, setSearchFilter] = useState<string>('');
   const [isAutoFillOpen, setIsAutoFillOpen] = useState<boolean>(false);
+  const [isCleaningDuplicates, setIsCleaningDuplicates] = useState<boolean>(false);
+
+  const duplicateInfo = useMemo(() => {
+    return findAndDeduplicateLogs(attendanceLogs);
+  }, [attendanceLogs]);
+
+  const handleCleanDuplicates = async () => {
+    if (!onCleanDuplicateLogs || isCleaningDuplicates) return;
+    setIsCleaningDuplicates(true);
+    try {
+      await onCleanDuplicateLogs();
+    } finally {
+      setIsCleaningDuplicates(false);
+    }
+  };
 
   const today = getTodayString();
   const todayHoliday = getHolidayForDate(today, holidays);
@@ -314,6 +334,21 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
             >
               <CalendarCheck className="w-3.5 h-3.5 text-emerald-950" /> Lengkapi Absen Kosong
             </button>
+            {duplicateInfo.duplicateCount > 0 && onCleanDuplicateLogs && (
+              <button
+                onClick={handleCleanDuplicates}
+                disabled={isCleaningDuplicates}
+                className="px-3 py-2 bg-rose-50 border border-rose-300 text-rose-700 hover:bg-rose-100 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm active:scale-95 disabled:opacity-50"
+                title="Hapus data presensi ganda dari database"
+              >
+                {isCleaningDuplicates ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Trash2 className="w-3.5 h-3.5" />
+                )}
+                Bersihkan Ganda ({duplicateInfo.duplicateCount})
+              </button>
+            )}
             <button
               onClick={handleExportXLSX}
               className="px-3.5 py-2 bg-emerald-800 hover:bg-emerald-900 text-white rounded-xl text-xs font-semibold transition flex items-center gap-1.5 shadow-sm"
@@ -399,6 +434,8 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
         holidays={holidays}
         attendanceLogs={attendanceLogs}
         onBulkAddLogs={onBulkAddLogs}
+        onRefreshLogs={onRefreshLogs}
+        onCleanDuplicates={onCleanDuplicateLogs}
         showToast={showToast}
       />
 

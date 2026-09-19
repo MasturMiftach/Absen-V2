@@ -18,9 +18,12 @@ import {
   syncTeachersToSupabase,
   syncLocationConfigToSupabase,
   syncHolidayToSupabase,
-  deleteHolidayFromSupabase
+  deleteHolidayFromSupabase,
+  fetchAttendanceLogs,
+  deleteLogsFromSupabase
 } from './lib/supabase';
-import { syncLogsToFirestore } from './lib/firebase';
+import { syncLogsToFirestore, deleteLogsFromFirestore } from './lib/firebase';
+import { findAndDeduplicateLogs } from './utils/attendanceUtils';
 
 import { ToastContainer } from './components/Toast';
 import { LoginView } from './components/LoginView';
@@ -486,8 +489,20 @@ export default function App() {
   const handleBulkAddLogs = async (newLogs: AttendanceLog[]) => {
     if (!newLogs || newLogs.length === 0) return;
 
-    // Update local state immediately for fast responsive UI
-    setAttendanceLogs((prev) => [...newLogs, ...prev]);
+    // Run deduplication on combined logs to guarantee zero duplicates in local state
+    let duplicateIdsToPurge: string[] = [];
+    setAttendanceLogs((prev) => {
+      const combined = [...newLogs, ...prev];
+      const { deduplicatedLogs, duplicateLogIds } = findAndDeduplicateLogs(combined);
+      duplicateIdsToPurge = duplicateLogIds;
+      return deduplicatedLogs;
+    });
+
+    // If any older duplicate entries were superseded, delete them from cloud databases
+    if (duplicateIdsToPurge.length > 0) {
+      deleteLogsFromSupabase(duplicateIdsToPurge).catch(() => {});
+      deleteLogsFromFirestore(duplicateIdsToPurge).catch(() => {});
+    }
 
     // Persist to Supabase in batches
     const res = await syncLogsToSupabase(newLogs);
@@ -510,6 +525,47 @@ export default function App() {
           body: JSON.stringify(log),
         }).catch(() => {});
       }
+    }
+  };
+
+  const handleCleanDuplicateLogs = async (): Promise<number> => {
+    try {
+      const { deduplicatedLogs, duplicateLogIds } = findAndDeduplicateLogs(attendanceLogs);
+      if (duplicateLogIds.length === 0) {
+        showToast('Sudah Bersih', 'Tidak ditemukan data presensi ganda di database.');
+        return 0;
+      }
+      setAttendanceLogs(deduplicatedLogs);
+      await Promise.allSettled([
+        deleteLogsFromSupabase(duplicateLogIds),
+        deleteLogsFromFirestore(duplicateLogIds)
+      ]);
+      showToast(
+        'Pembersihan Berhasil!',
+        `Sebanyak ${duplicateLogIds.length} data presensi ganda berhasil dihapus dan dibersihkan dari database.`
+      );
+      return duplicateLogIds.length;
+    } catch (e: any) {
+      console.error('Failed to clean duplicate logs:', e);
+      showToast('Gagal Membersihkan', e?.message || 'Terjadi kesalahan sistem.', true);
+      return 0;
+    }
+  };
+
+  const handleRefreshAttendanceLogs = async () => {
+    try {
+      const logs = await fetchAttendanceLogs();
+      if (logs && logs.length > 0) {
+        const { deduplicatedLogs, duplicateLogIds } = findAndDeduplicateLogs(logs);
+        setAttendanceLogs(deduplicatedLogs);
+        if (duplicateLogIds.length > 0) {
+          deleteLogsFromSupabase(duplicateLogIds).catch(() => {});
+          deleteLogsFromFirestore(duplicateLogIds).catch(() => {});
+        }
+      }
+      showToast('Database Sinkron', 'Data presensi berhasil disinkronkan ulang dan diverifikasi tanpa duplikasi.');
+    } catch (e) {
+      console.warn('Failed to refresh logs:', e);
     }
   };
 
@@ -645,6 +701,8 @@ export default function App() {
             holidays={holidays}
             onDeleteLog={handleDeleteLog}
             onBulkAddLogs={handleBulkAddLogs}
+            onRefreshLogs={handleRefreshAttendanceLogs}
+            onCleanDuplicateLogs={handleCleanDuplicateLogs}
             showToast={showToast}
           />
         )}

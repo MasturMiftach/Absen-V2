@@ -10,6 +10,7 @@ import {
 } from 'firebase/firestore';
 import { Teacher, WorkScheduleDay, AttendanceLog } from '../types';
 import { INITIAL_TEACHERS, DEFAULT_SCHEDULE, INITIAL_LOGS } from '../data/initialData';
+import { normalizeLogsTimezone } from '../utils/dateUtils';
 import firebaseConfigJson from '../../firebase-applet-config.json';
 
 // Safe environment variable accessor
@@ -68,12 +69,13 @@ export function subscribeAttendanceLogs(
         snapshot.forEach((docSnap) => {
           logs.push(docSnap.data() as AttendanceLog);
         });
+        const normalized = normalizeLogsTimezone(logs);
         // Sort descending by date & time
-        logs.sort((a, b) => {
+        normalized.sort((a, b) => {
           if (a.date !== b.date) return b.date.localeCompare(a.date);
           return b.time.localeCompare(a.time);
         });
-        onUpdate(logs);
+        onUpdate(normalized);
       },
       (error) => {
         console.error("Firestore logs listener error:", error);
